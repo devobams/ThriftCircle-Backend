@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  super_admin
+  admin
+  organizer
+  member
+}
+
+enum UserStatus {
+  active
+  deactivated
+}
+
+model User {
+  id           String     @id @default(uuid())
+  fullName     String     @map("full_name")
+  phoneNumber  String     @unique @map("phone_number")
+  email        String?
+  passwordHash String     @map("password_hash")
+  role         Role
+  status       UserStatus @default(active)
+  createdById  String?    @map("created_by")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+// Groups, GroupMembers, Invites, Contributions, etc. get added here
+// as each module owner starts building — this is just the starting model.
