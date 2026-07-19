@@ -1,10 +1,10 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
-import { pool } from "./config/db.js";
+import {prisma} from "./config/prisma.js";
 
 async function start() {
   try {
-    await pool.query("SELECT 1"); // fail fast if DB is unreachable
+    // await prisma.$queryRaw("SELECT 1"); // fail fast if DB is unreachable
     app.listen(env.port, () => {
       console.log(`ThriftCircle backend running on port ${env.port}`);
     });
