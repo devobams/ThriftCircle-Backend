@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────
+// ENUMS
+// ─────────────────────────────
+
 enum Role {
   super_admin
   admin
@@ -19,6 +23,71 @@ enum UserStatus {
   deactivated
 }
 
+enum GroupStatus {
+  active
+  completed
+  archived
+}
+
+enum Frequency {
+  weekly
+  monthly
+}
+
+enum PayoutOrderType {
+  fixed
+  rotating
+}
+
+enum JoinStatus {
+  invited
+  active
+  removed
+}
+
+enum InviteStatus {
+  pending
+  used
+  expired
+}
+
+enum CycleStatus {
+  active
+  completed
+}
+
+enum ContributionStatus {
+  pending
+  pending_confirmation
+  confirmed
+  rejected
+  overdue
+}
+
+enum PayoutStatus {
+  pending
+  completed
+  failed
+  reversed
+}
+
+enum DisputeStatus {
+  open
+  resolved
+}
+
+enum NotificationType {
+  reminder
+  overdue
+  confirmation
+  rejection
+  dispute
+}
+
+// ─────────────────────────────
+// USER
+// ─────────────────────────────
+
 model User {
   id           String     @id @default(uuid())
   fullName     String     @map("full_name")
@@ -30,8 +99,228 @@ model User {
   createdById  String?    @map("created_by")
   createdAt    DateTime   @default(now()) @map("created_at")
 
+  createdBy    User?      @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[]     @relation("UserCreatedBy")
+
+  groupsOrganized Group[] @relation("GroupOrganizer")
+  groupMemberships GroupMember[]
+  invitesCreated Invite[] @relation("InviteCreatedBy")
+
+  adminAssignments AdminGroupAssignment[] @relation("AdminAssignments")
+  assignmentsMade  AdminGroupAssignment[] @relation("AssignedBy")
+
+  contributionsActedOn Contribution[] @relation("ConfirmedBy")
+  statusLogEntries ContributionStatusLog[] @relation("ActedBy")
+
+  payoutsMarkedPaid Payout[] @relation("PayoutPaidBy")
+
+  disputesRaised   Dispute[] @relation("RaisedBy")
+  disputesInvolved Dispute[] @relation("InvolvedMember")
+
+  notifications Notification[]
+
   @@map("users")
 }
 
-// Groups, GroupMembers, Invites, Contributions, etc. get added here
-// as each module owner starts building — this is just the starting model.
+// ─────────────────────────────
+// GROUPS & MEMBERSHIP
+// ─────────────────────────────
+
+model Group {
+  id                  String          @id @default(uuid())
+  name                String
+  organizerId         String          @map("organizer_id")
+  contributionAmount  Decimal         @map("contribution_amount")
+  totalSlots          Int             @map("total_slots")
+  frequency           Frequency       @default(weekly) @map("frequency")
+  payoutOrderType     PayoutOrderType @map("payout_order_type")
+  status              GroupStatus     @default(active)
+  createdAt           DateTime        @default(now()) @map("created_at")
+
+  organizer  User @relation("GroupOrganizer", fields: [organizerId], references: [id])
+
+  groupMembers          GroupMember[]
+  invites               Invite[]
+  contributionCycles    ContributionCycle[]
+  adminGroupAssignments AdminGroupAssignment[]
+  disputes              Dispute[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id         String     @id @default(uuid())
+  groupId    String     @map("group_id")
+  userId     String     @map("user_id")
+  joinStatus JoinStatus @default(invited) @map("join_status")
+  joinedAt   DateTime   @default(now()) @map("joined_at")
+
+  group Group @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  contributions Contribution[]
+  payoutOrders  PayoutOrder[]
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model Invite {
+  id                 String       @id @default(uuid())
+  code               String       @unique
+  groupId            String       @map("group_id")
+  createdById        String       @map("created_by")
+  invitedPhoneNumber String?      @map("invited_phone_number")
+  status             InviteStatus @default(pending)
+  expiresAt          DateTime?    @map("expires_at")
+  createdAt          DateTime     @default(now()) @map("created_at")
+
+  group     Group @relation(fields: [groupId], references: [id])
+  createdBy User  @relation("InviteCreatedBy", fields: [createdById], references: [id])
+
+  @@map("invites")
+}
+
+// ─────────────────────────────
+// ADMIN SCOPING
+// ─────────────────────────────
+
+model AdminGroupAssignment {
+  id           String   @id @default(uuid())
+  adminId      String   @map("admin_id")
+  groupId      String   @map("group_id")
+  assignedById String   @map("assigned_by")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  admin      User  @relation("AdminAssignments", fields: [adminId], references: [id])
+  group      Group @relation(fields: [groupId], references: [id])
+  assignedBy User  @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  @@unique([adminId, groupId])
+  @@map("admin_group_assignments")
+}
+
+// ─────────────────────────────
+// CONTRIBUTIONS & PAYOUTS
+// ─────────────────────────────
+
+model ContributionCycle {
+  id          String      @id @default(uuid())
+  groupId     String      @map("group_id")
+  cycleNumber Int         @map("cycle_number")
+  status      CycleStatus @default(active)
+  startedAt   DateTime    @default(now()) @map("started_at")
+  completedAt DateTime?   @map("completed_at")
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  contributions Contribution[]
+  payoutOrder   PayoutOrder?
+
+  @@unique([groupId, cycleNumber])
+  @@map("contribution_cycles")
+}
+
+model Contribution {
+  id                String             @id @default(uuid())
+  cycleId           String             @map("cycle_id")
+  groupMemberId     String             @map("group_member_id")
+  dueDate           DateTime           @map("due_date")
+  amount            Decimal
+  status            ContributionStatus @default(pending)
+  proofOfPaymentUrl String?            @map("proof_of_payment_url")
+  confirmedById     String?            @map("confirmed_by")
+  confirmedAt       DateTime?          @map("confirmed_at")
+  rejectionReason   String?            @map("rejection_reason")
+
+  cycle       ContributionCycle @relation(fields: [cycleId], references: [id])
+  groupMember GroupMember       @relation(fields: [groupMemberId], references: [id])
+  confirmedBy User?             @relation("ConfirmedBy", fields: [confirmedById], references: [id])
+
+  statusLog ContributionStatusLog[]
+
+  @@unique([cycleId, groupMemberId])
+  @@index([status])
+  @@map("contributions")
+}
+
+model ContributionStatusLog {
+  id             String              @id @default(uuid())
+  contributionId String              @map("contribution_id")
+  oldStatus      ContributionStatus? @map("old_status")
+  newStatus      ContributionStatus  @map("new_status")
+  actedById      String?             @map("acted_by")
+  note           String?
+  actedAt        DateTime            @default(now()) @map("acted_at")
+
+  contribution Contribution @relation(fields: [contributionId], references: [id])
+  actedBy      User?        @relation("ActedBy", fields: [actedById], references: [id])
+
+  @@map("contribution_status_log")
+}
+
+model PayoutOrder {
+  id            String  @id @default(uuid())
+  cycleId       String  @unique @map("cycle_id")
+  groupMemberId String  @unique @map("group_member_id")
+  position      Int
+
+  cycle       ContributionCycle @relation(fields: [cycleId], references: [id])
+  groupMember GroupMember       @relation(fields: [groupMemberId], references: [id])
+
+  payout Payout?
+
+  @@map("payout_order")
+}
+
+model Payout {
+  id            String       @id @default(uuid())
+  payoutOrderId String       @unique @map("payout_order_id")
+  amount        Decimal
+  status        PayoutStatus @default(pending)
+  paidById      String?      @map("paid_by")
+  paidAt        DateTime?    @map("paid_at")
+  reference     String?
+  proofUrl      String?      @map("proof_url")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  payoutOrder PayoutOrder @relation(fields: [payoutOrderId], references: [id])
+  paidBy      User?       @relation("PayoutPaidBy", fields: [paidById], references: [id])
+
+  @@map("payouts")
+}
+
+// ─────────────────────────────
+// DISPUTES & NOTIFICATIONS
+// ─────────────────────────────
+
+model Dispute {
+  id               String        @id @default(uuid())
+  groupId          String        @map("group_id")
+  raisedById       String        @map("raised_by")
+  involvedMemberId String?       @map("involved_member_id")
+  description      String
+  status           DisputeStatus @default(open)
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  group          Group @relation(fields: [groupId], references: [id])
+  raisedBy       User  @relation("RaisedBy", fields: [raisedById], references: [id])
+  involvedMember User? @relation("InvolvedMember", fields: [involvedMemberId], references: [id])
+
+  @@index([status])
+  @@map("disputes")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([isRead])
+  @@map("notifications")
+}
