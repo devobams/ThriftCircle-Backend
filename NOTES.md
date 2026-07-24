@@ -320,3 +320,5 @@ sent 2 days before due date and again if overdue").
   means a new `Group`. Revisit if the product needs to support the same
   group of people running Ajo after Ajo without recreating membership each
   time.
+
+**Team decision:** the Organizer is never a GroupMember row, even in their own group. They manage the group (create it, confirm/reject payments, generate invites) but never contribute or receive a payout themselves — matching the PRD's own framing of Organizer as a "vendor/tenant owner," not a participant. This means totalSlots and slots_filled only ever count actual rotation participants, never the organizer. Access checks for "can this person see this group" must check group.organizerId === userId as a separate condition from GroupMember lookup — the organizer will never pass a membership check on their own group.

@@ -83,6 +83,7 @@ disable the join CTA before the person wastes a signup attempt.
 | `POST` | `/groups/:id/invites` | Organizer | Generate invite link/code |
 | `POST` | `/groups/:id/join` | Authenticated, has invite code | Join existing group — **can now return 409 if full** |
 | `GET` | `/groups/:id/members` | Member of group | List members |
+| GET | /groups/:id | Organizer (owner) or Member of group | Group details, including slot availability |
 
 ### `POST /groups` — request body (updated)
 
