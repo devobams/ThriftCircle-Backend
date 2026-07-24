@@ -16,5 +16,5 @@ export const login = asyncHandler(async (req, res) => {
 
 export const getMe = asyncHandler(async (req, res) => {
   const user = await getUserById(req.user.id);
-  res.status(200).json(user);
+  res.status(200).json({ user });
 });
