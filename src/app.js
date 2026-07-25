@@ -1,19 +1,19 @@
 import express from "express";
-import authRoutes from "./modules/auth/auth.routes.js";
+import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.use("/api/v1/auth", authRoutes);
-// as modules get built, register them here, e.g.:
-// app.use("/api/v1/groups", groupsRoutes);
-// app.use("/api/v1/back-office/admins", adminRoutes);
+app.use("/api/v1", routes);
+// Each module's routes get added inside src/routes/index.js, not here —
+// keeps this file untouched as new modules come online (see CONTRIBUTING.md)
 
 app.use(errorHandler);
 
