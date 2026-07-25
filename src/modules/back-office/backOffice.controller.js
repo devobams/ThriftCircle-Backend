@@ -2,7 +2,7 @@ import {asyncHandler} from "../../utils/asyncHandler.js";
 
 import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema} from "./backOffice.validation.js";
 
-import {createAdminAccount,deactivateAdminAccount,updateAssignments} from "./backOffice.service.js";
+import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups} from "./backOffice.service.js";
 
 //POST /back-office/admins
 
@@ -36,5 +36,11 @@ export const handleDeactivateAdmin = asyncHandler(async (req, res) => {
   const {group_ids} = updateAssignmentsSchema.parse(req.body);
   const result = await updateAssignments(id,group_ids,req.user.id);
   res.status(200).json(result);
+});
+
+//GET /back-office/groups
+export const handleAssignedGroups = asyncHandler(async (req, res) => {
+  const groups = await listAssignedGroups(req.user.id);
+  res.status(200).json(groups);
 });
 

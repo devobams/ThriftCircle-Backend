@@ -43,3 +43,8 @@ export function createAssignments(adminId, groupIds, assignedById) {
     data: groupIds.map((groupId) => ({adminId,groupId,assignedById}))
   });
 }
+
+// Assigned groups
+ export function getAssignedGroups(adminId) {
+  return prisma.adminGroupAssignment.findMany({where: {adminId},include: {group: true}});
+}
