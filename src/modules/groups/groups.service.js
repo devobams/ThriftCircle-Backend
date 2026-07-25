@@ -1,58 +1,40 @@
-
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import {
+  createGroupWithOrganizer,
+  findGroupById,
+  findMembership,
+  countActiveMembers,
+} from "./groups.model.js";
 
 export async function createGroup(organizerId, data) {
-  const group = await prisma.$transaction(async (tx) => {
-    const newGroup = await tx.group.create({
-      data: {
-        name: data.name,
-        organizerId,
-        contributionAmount: data.contribution_amount,
-        totalSlots: data.total_slots,
-        frequency: data.frequency,
-        payoutOrderType: data.payout_order_type,
-      },
-    });
+  const group = await createGroupWithOrganizer(organizerId, data);
 
-    // Organizer counts as the first member so they can view their own group
-    await tx.groupMember.create({
-      data: {
-        groupId: newGroup.id,
-        userId: organizerId,
-        joinStatus: "active",
-      },
-    });
-
-    return newGroup;
-  });
-
-  return group;
+  return {
+    id: group.id,
+    name: group.name,
+    contribution_amount: group.contributionAmount,
+    total_slots: group.totalSlots,
+    frequency: group.frequency,
+    payout_order_type: group.payoutOrderType,
+    status: group.status,
+    organizer_position: 1,
+    slots_filled: 1,
+    slots_available: group.totalSlots - 1,
+  };
 }
 
 export async function getGroupById(groupId, userId) {
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-  });
+  const group = await findGroupById(groupId);
+  if (!group) return { notFound: true };
 
-  if (!group) {
-    return { notFound: true };
-  }
+  const isOwner = group.organizerId === userId;
+  const membership = await findMembership(groupId, userId);
+  const isActiveMember = membership?.joinStatus === "active";
 
-  const membership = await prisma.groupMember.findUnique({
-    where: {
-      groupId_userId: { groupId, userId },
-    },
-  });
-
-  if (!membership || membership.joinStatus !== "active") {
+  if (!isOwner && !isActiveMember) {
     return { forbidden: true };
   }
 
-  const slotsFilled = await prisma.groupMember.count({
-    where: { groupId, joinStatus: "active" },
-  });
+  const slotsFilled = await countActiveMembers(groupId);
 
   return {
     id: group.id,
