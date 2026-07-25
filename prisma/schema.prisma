@@ -152,6 +152,7 @@ model GroupMember {
   id         String     @id @default(uuid())
   groupId    String     @map("group_id")
   userId     String     @map("user_id")
+  position   Int        // the slot this person occupies (1..totalSlots). Slot 1 is always the organizer
   joinStatus JoinStatus @default(invited) @map("join_status")
   joinedAt   DateTime   @default(now()) @map("joined_at")
 
@@ -162,6 +163,7 @@ model GroupMember {
   payoutOrders  PayoutOrder[]
 
   @@unique([groupId, userId])
+  @@unique([groupId, position]) // two people can't hold the same slot in the group
   @@map("group_members")
 }
 
@@ -263,7 +265,6 @@ model PayoutOrder {
   id            String  @id @default(uuid())
   cycleId       String  @unique @map("cycle_id")
   groupMemberId String  @unique @map("group_member_id")
-  position      Int
 
   cycle       ContributionCycle @relation(fields: [cycleId], references: [id])
   groupMember GroupMember       @relation(fields: [groupMemberId], references: [id])

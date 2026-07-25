@@ -97,6 +97,28 @@ disable the join CTA before the person wastes a signup attempt.
 }
 ```
 
+### `POST /groups` — response (updated)
+
+```json
+{
+  "id": "uuid",
+  "name": "Aunt Funmi's Group",
+  "contribution_amount": 5000,
+  "total_slots": 10,
+  "frequency": "weekly",
+  "payout_order_type": "fixed",
+  "status": "active",
+  "organizer_position": 1,
+  "slots_filled": 1,
+  "slots_available": 9
+}
+```
+
+The Organizer is automatically added as a `GroupMember` at creation,
+holding **slot 1** — they participate in the rotation, not just administer
+it (per team research into real Esusu practice: the organizer having
+"skin in the game" builds trust). `slots_filled` starts at `1`, not `0`.
+
 `total_slots` is **required**, validated by Zod as a positive integer with a
 sane upper bound (e.g. `z.number().int().min(2).max(100)` — matches PRD
 Section 8's scalability NFR: "support groups from 5 to 100+ members").
@@ -107,6 +129,36 @@ Section 8's scalability NFR: "support groups from 5 to 100+ members").
 
 This is the endpoint where the slot-capacity check from Section 1 actually
 runs.
+
+This is enforced at the database level by `GroupMember`'s
+`@@unique([groupId, position])` constraint — the service layer catches the
+constraint violation and returns this clean message rather than a raw
+Prisma error. Listing available slots in the error message directly serves
+the frontend experience of showing tappable/greyed slot buttons — the
+client can use this list immediately without a second round-trip.
+
+**Note:** requesting a specific position is separate from choosing to
+change position later ("request slot change") — that flow is explicitly
+scoped out of MVP per team decision, parked as a future enhancement once
+the core join flow is proven.
+
+### `POST /groups/:id/join` — request body (updated)
+
+```json
+{
+  "invite_code": "abc123",
+  "position": 4
+}
+```
+
+`position` is **optional**:
+- If provided (`2` through `total_slots` — slot 1 is always the
+  Organizer's), the join attempts to claim that exact slot. If it's
+  already taken, the request fails — see below.
+- If omitted, the service auto-assigns the **lowest available** position
+  (natural first-come-first-served default).
+
+**New failure mode — slot already taken:**
 
 ### `GET /groups/:id` — response now includes
 
