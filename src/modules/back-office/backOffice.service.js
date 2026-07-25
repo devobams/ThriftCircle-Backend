@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma.js";
-import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById} from "./backOffice.model.js";
+import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById,deleteAssignments,createAssignments} from "./backOffice.model.js";
+import { } from "./backOffice.model.js";
 
 const SALT_ROUNDS = 10;
 
@@ -57,6 +58,21 @@ export async function deactivateAdminAccount(adminId) {
   }
   await deactivateAdmin(adminId);
   return {message: "Admin deactivated successfully"};
+}
+
+// Update Assignments
+export async function updateAssignments(adminId,groupIds,superAdminId
+) {
+  const admin = await findAdminById(adminId);
+
+  if (!admin) {
+    const err = new Error("Admin not found");
+    err.status = 404;
+    throw err;
+  }
+  await deleteAssignments(adminId);
+  await createAssignments(adminId,groupIds,superAdminId);
+  return {message: "Assignments updated successfully"};
 }
 
 

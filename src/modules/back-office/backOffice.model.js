@@ -31,3 +31,15 @@ export function deactivateAdmin(id) {
     data: {status: "deactivated"},
   });
 }
+
+//Remove all current assignments
+export function deleteAssignments(adminId) {
+  return prisma.adminGroupAssignment.deleteMany({where: {adminId}});
+}
+
+//Create new assignments
+export function createAssignments(adminId, groupIds, assignedById) {
+  return prisma.adminGroupAssignment.createMany({
+    data: groupIds.map((groupId) => ({adminId,groupId,assignedById}))
+  });
+}

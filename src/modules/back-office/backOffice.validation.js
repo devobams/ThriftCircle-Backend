@@ -26,3 +26,9 @@ export const createAdminSchema = z.object({
 export const adminIdParamSchema = z.object({
   id: z.string().uuid("Invalid admin id"),
 });
+
+export const updateAssignmentsSchema = z.object({
+  group_ids: z
+    .array(z.string().uuid("Invalid group id"))
+    .min(1, "At least one group must be assigned"),
+});
