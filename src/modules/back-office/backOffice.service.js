@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma.js";
 import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById,deleteAssignments,createAssignments} from "./backOffice.model.js";
-import {getAssignedGroups } from "./backOffice.model.js";
+import {getAssignedGroups,getAssignedDisputes } from "./backOffice.model.js";
 
 const SALT_ROUNDS = 10;
 
@@ -80,4 +80,9 @@ export async function listAssignedGroups(adminId) {
   return await getAssignedGroups(adminId);
 }
 
-
+// Scoped Disputes
+export async function listAssignedDisputes(adminId) {
+  const assignments = await getAssignedGroups(adminId);
+  const groupIds = assignments.map((assignment) => assignment.groupId);
+  return await getAssignedDisputes(groupIds);
+}

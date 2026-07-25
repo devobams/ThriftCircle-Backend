@@ -1,19 +1,14 @@
 import {asyncHandler} from "../../utils/asyncHandler.js";
-
 import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema} from "./backOffice.validation.js";
-
 import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups} from "./backOffice.service.js";
+import {listAssignedDisputes} from "./backOffice.service.js";
+
 
 //POST /back-office/admins
-
 export const handleCreateAdmin = asyncHandler(async (req, res) => {
   const data = createAdminSchema.parse(req.body);
 
-  const result = await createAdminAccount(
-    data,
-    req.user.id
-  );
-
+  const result = await createAdminAccount(data,req.user.id);
   res.status(201).json(result);
 });
 
@@ -44,3 +39,9 @@ export const handleAssignedGroups = asyncHandler(async (req, res) => {
   res.status(200).json(groups);
 });
 
+//GET /back-office/disputes
+export const handleAssignedDisputes = asyncHandler(async (req, res) => {
+  const disputes = await listAssignedDisputes(req.user.id);
+
+  res.status(200).json(disputes);
+});

@@ -48,3 +48,12 @@ export function createAssignments(adminId, groupIds, assignedById) {
  export function getAssignedGroups(adminId) {
   return prisma.adminGroupAssignment.findMany({where: {adminId},include: {group: true}});
 }
+
+//Assigned disputes
+export function getAssignedDisputes(groupIds) {
+  return prisma.dispute.findMany({
+    where: {groupId: {in: groupIds}},
+    include: {group: true,raisedBy: true,involvedMember: true},
+    orderBy: {createdAt: "desc"},
+  });
+}
