@@ -57,3 +57,8 @@ export function getAssignedDisputes(groupIds) {
     orderBy: {createdAt: "desc"},
   });
 }
+
+// Resolve dispute
+ export function resolveDispute(disputeId) {
+  return prisma.dispute.update({where: {id: disputeId,},data: {status: "resolved"}});
+}

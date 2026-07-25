@@ -32,3 +32,11 @@ export const updateAssignmentsSchema = z.object({
     .array(z.string().uuid("Invalid group id"))
     .min(1, "At least one group must be assigned"),
 });
+
+export const disputeIdParamSchema = z.object({
+  id: z.string().uuid("Invalid dispute id"),
+});
+
+export const resolveDisputeSchema = z.object({
+  status: z.enum(["resolved"]),
+});

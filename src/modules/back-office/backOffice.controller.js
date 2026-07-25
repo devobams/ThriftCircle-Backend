@@ -1,13 +1,12 @@
 import {asyncHandler} from "../../utils/asyncHandler.js";
-import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema} from "./backOffice.validation.js";
-import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups} from "./backOffice.service.js";
+import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema,disputeIdParamSchema,resolveDisputeSchema} from "./backOffice.validation.js";
+import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups,resolveAdminDispute} from "./backOffice.service.js";
 import {listAssignedDisputes} from "./backOffice.service.js";
 
 
 //POST /back-office/admins
 export const handleCreateAdmin = asyncHandler(async (req, res) => {
   const data = createAdminSchema.parse(req.body);
-
   const result = await createAdminAccount(data,req.user.id);
   res.status(201).json(result);
 });
@@ -42,6 +41,13 @@ export const handleAssignedGroups = asyncHandler(async (req, res) => {
 //GET /back-office/disputes
 export const handleAssignedDisputes = asyncHandler(async (req, res) => {
   const disputes = await listAssignedDisputes(req.user.id);
-
   res.status(200).json(disputes);
+});
+
+//PATCH  /back-office/disputes/:id
+export const handleResolveDispute = asyncHandler(async (req, res) => {
+  const {id} = disputeIdParamSchema.parse(req.params);
+  const data = resolveDisputeSchema.parse(req.body);
+  const result = await resolveAdminDispute(id,data);
+  res.status(200).json(result);
 });

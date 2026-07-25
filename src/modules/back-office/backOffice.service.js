@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma.js";
 import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById,deleteAssignments,createAssignments} from "./backOffice.model.js";
-import {getAssignedGroups,getAssignedDisputes } from "./backOffice.model.js";
+import {getAssignedGroups,getAssignedDisputes,resolveDispute } from "./backOffice.model.js";
 
 const SALT_ROUNDS = 10;
 
@@ -85,4 +85,24 @@ export async function listAssignedDisputes(adminId) {
   const assignments = await getAssignedGroups(adminId);
   const groupIds = assignments.map((assignment) => assignment.groupId);
   return await getAssignedDisputes(groupIds);
+}
+
+export async function resolveAdminDispute(disputeId,data) {
+  const dispute = await prisma.dispute.findUnique({
+    where: {id: disputeId}
+  });
+
+  if (!dispute) {
+    const err = new Error("Dispute not found");
+    err.status = 404;
+    throw err;
+  }
+
+  if (dispute.status === "resolved") {
+    const err = new Error("Dispute is already resolved");
+    err.status = 409;
+    throw err;
+  }
+  const updatedDispute = await resolveDispute(disputeId,data.status);
+  return {message: "Dispute resolved successfully",dispute: updatedDispute};
 }
