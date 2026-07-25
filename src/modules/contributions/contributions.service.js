@@ -1,60 +1,79 @@
-import { prisma } from "../../config/prisma.js";
+import {
+  findGroupSchedule,
+  findContributionById,
+  updateContribution,
+  createContributionStatusLog,
+} from "./contributions.model.js";
 
+/**
+ * Returns the contribution schedule for a group.
+ */
 export async function getContributionSchedule(groupId) {
-  const group = await prisma.group.findUnique({
-    where: {
-      id: groupId,
-    },
-    include: {
-      contributionCycles: {
-        where: {
-          status: "active",
-        },
-        include: {
-          contributions: {
-            include: {
-              groupMember: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  return findGroupSchedule(groupId);
+}
 
-  if (!group) {
-    return {
-        message: "Group not found"
-    }
-  }
+/**
+ * Member submits proof of payment.
+ *
+ * TODO:
+ * - Ensure contribution exists.
+ * - Ensure authenticated user owns the contribution.
+ * - Ensure contribution is still pending.
+ * - Upload/store proof of payment.
+ * - Update contribution:
+ *      status -> "submitted"
+ *      proofOfPaymentUrl
+ * - Create ContributionStatusLog.
+ * - Return updated contribution.
+ */
+export async function submitPayment(
+  contributionId,
+  userId,
+  proofOfPaymentUrl
+) {
+  throw new Error("submitPayment() not implemented.");
+}
 
-  const currentCycle = group.contributionCycles[0];
+/**
+ * Organizer confirms a contribution payment.
+ *
+ * TODO:
+ * - Ensure contribution exists.
+ * - Ensure authenticated user is organizer.
+ * - Ensure contribution is submitted.
+ * - Update:
+ *      status -> "confirmed"
+ *      confirmedById
+ *      confirmedAt
+ * - Create ContributionStatusLog.
+ * - Return updated contribution.
+ */
+export async function confirmContribution(
+  contributionId,
+  organizerId,
+  note
+) {
+  throw new Error("confirmContribution() not implemented.");
+}
 
-  return {
-    group: {
-      id: group.id,
-      name: group.name,
-      contributionAmount: group.contributionAmount,
-      frequency: group.frequency,
-    },
-
-    currentCycle: currentCycle
-      ? {
-          cycleNumber: currentCycle.cycleNumber,
-          status: currentCycle.status,
-        }
-      : null,
-
-    members:
-      currentCycle?.contributions.map((contribution) => ({
-        memberId: contribution.groupMember.user.id,
-        fullName: contribution.groupMember.user.fullName,
-        status: contribution.status,
-        amount: contribution.amount,
-        dueDate: contribution.dueDate,
-      })) ?? [],
-  };
+/**
+ * Organizer rejects a submitted payment.
+ *
+ * TODO:
+ * - Ensure contribution exists.
+ * - Ensure authenticated user is organizer.
+ * - Ensure contribution is submitted.
+ * - Update:
+ *      status -> "rejected"
+ *      rejectionReason
+ * - Create ContributionStatusLog.
+ * - Return updated contribution.
+ */
+export async function rejectContribution(
+  contributionId,
+  organizerId,
+  rejectionReason,
+  note
+) {
+  throw new Error("rejectContribution() not implemented.");
 }
