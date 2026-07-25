@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma.js";
-import {findAdminByPhoneNumber,createAdmin} from "./backOffice.model.js";
+import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById} from "./backOffice.model.js";
 
 const SALT_ROUNDS = 10;
 
@@ -45,4 +45,18 @@ export async function listAdmins() {
   const admins = await findAllAdmins();
   return admins.map(toSafeAdmin);
 }
+
+// Deactivate Admin
+export async function deactivateAdminAccount(adminId) {
+  const admin = await findAdminById(adminId);
+
+  if (!admin) {
+    const err = new Error("Admin not found");
+    err.status = 404;
+    throw err;
+  }
+  await deactivateAdmin(adminId);
+  return {message: "Admin deactivated successfully"};
+}
+
 

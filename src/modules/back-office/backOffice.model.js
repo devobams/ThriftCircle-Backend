@@ -24,3 +24,10 @@ export function findAllAdmins() {
     orderBy: {createdAt: "desc"}
   });
 }
+//Deactivate admin
+export function deactivateAdmin(id) {
+  return prisma.user.update({
+    where: { id },
+    data: {status: "deactivated"},
+  });
+}
