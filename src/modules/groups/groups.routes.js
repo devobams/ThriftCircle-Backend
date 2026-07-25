@@ -6,7 +6,7 @@ import { handleCreateGroup, handleGetGroupById } from "./groups.controller.js";
 
 const router = Router();
 
-router.post("/", authenticate, authorize("organizer"), handleCreateGroup);
-router.get("/:id", authenticate, handleGetGroupById);
+router.post("/groups", authenticate, authorize("organizer"), handleCreateGroup);
+router.get("/groups/:id", authenticate, handleGetGroupById);
 
 export default router;
