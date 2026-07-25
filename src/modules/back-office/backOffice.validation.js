@@ -40,3 +40,5 @@ export const disputeIdParamSchema = z.object({
 export const resolveDisputeSchema = z.object({
   status: z.enum(["resolved"]),
 });
+
+export const analyticsQuerySchema = z.object({});

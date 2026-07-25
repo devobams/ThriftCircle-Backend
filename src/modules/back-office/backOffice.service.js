@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma.js";
 import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById,deleteAssignments,createAssignments} from "./backOffice.model.js";
-import {getAssignedGroups,getAssignedDisputes,resolveDispute } from "./backOffice.model.js";
+import {getAssignedGroups,getAssignedDisputes,resolveDispute,getPlatformAnalytics} from "./backOffice.model.js";
 
 const SALT_ROUNDS = 10;
 
@@ -105,4 +105,15 @@ export async function resolveAdminDispute(disputeId,data) {
   }
   const updatedDispute = await resolveDispute(disputeId,data.status);
   return {message: "Dispute resolved successfully",dispute: updatedDispute};
+}
+
+// Platform Analytics
+export async function getAnalytics() {
+  const [totalUsers,totalGroups,activeGroups,openDisputes] = await getPlatformAnalytics();
+  return {
+    total_users: totalUsers,
+    total_groups: totalGroups,
+    active_groups: activeGroups,
+    open_disputes: openDisputes
+  };
 }

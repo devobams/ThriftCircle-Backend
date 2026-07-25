@@ -1,6 +1,6 @@
 import {asyncHandler} from "../../utils/asyncHandler.js";
-import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema,disputeIdParamSchema,resolveDisputeSchema} from "./backOffice.validation.js";
-import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups,resolveAdminDispute} from "./backOffice.service.js";
+import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema,disputeIdParamSchema,resolveDisputeSchema,analyticsQuerySchema} from "./backOffice.validation.js";
+import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups,resolveAdminDispute,getAnalytics} from "./backOffice.service.js";
 import {listAssignedDisputes} from "./backOffice.service.js";
 
 
@@ -50,4 +50,11 @@ export const handleResolveDispute = asyncHandler(async (req, res) => {
   const data = resolveDisputeSchema.parse(req.body);
   const result = await resolveAdminDispute(id,data);
   res.status(200).json(result);
+});
+
+//GET /back-office/analytics
+export const handleAnalytics = asyncHandler(async (req, res) => {
+  analyticsQuerySchema.parse(req.query);
+  const analytics = await getAnalytics();
+  res.status(200).json(analytics);
 });

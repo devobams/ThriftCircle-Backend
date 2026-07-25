@@ -62,3 +62,13 @@ export function getAssignedDisputes(groupIds) {
  export function resolveDispute(disputeId) {
   return prisma.dispute.update({where: {id: disputeId,},data: {status: "resolved"}});
 }
+
+//Platform analytics
+ export function getPlatformAnalytics() {
+  return prisma.$transaction([
+    prisma.user.count(),
+    prisma.group.count(),
+    prisma.group.count({where: {status: "active"}}),
+    prisma.dispute.count({where: {status: "open"}}),
+  ]);
+}
