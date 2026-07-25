@@ -89,13 +89,44 @@ PRD's Could-Have list). This join table is where group-specific state lives
 (did they actually join, or were they only invited?).
 
 **Notable fields:**
-- `joinStatus` (`invited`/`active`/`removed`) — tracks the funnel: someone
-  gets invited, joins (auto-join on signup per the Member flow, or explicit
-  join for an already-registered user), or is later removed.
-- `@@unique([groupId, userId])` — a person can't accidentally end up with
-  two membership rows in the same group.
+## 4. `GroupMember`
 
----
+**Real world:** the fact that a specific person occupies a specific
+**slot/turn** in a specific group's rotation — e.g. "Tunde holds slot 3 in
+Aunt Funmi's group."
+
+**Why it's a separate table from `User`:** a user isn't inherently "a
+member" — they *become* one by joining a specific group and taking a
+specific slot, and the same person can belong to multiple groups (future:
+"multi-group membership dashboard," PRD Could-Have list). This join table
+is where group-specific state lives.
+
+**Revised understanding (post-research):** the group revolves around
+**payout slots**, not just loose membership. Each slot = one participant =
+one payout turn. Crucially — **the Organizer participates too**, and always
+holds **slot 1** by default. This matches real Esusu practice directly: the
+organizer having "skin in the game" (contributing and receiving a payout
+like everyone else) builds trust, rather than sitting outside the rotation
+purely administering it.
+
+**Notable fields:**
+- `position` — the slot number this person occupies, `1` through
+  `totalSlots`. Slot `1` is always the Organizer's, set automatically at
+  group creation. Slots `2` through `totalSlots` are available to invited
+  Members, either self-selected (first-come-first-served) or organizer-
+  assigned.
+- `joinStatus` (`invited`/`active`/`removed`) — tracks the funnel.
+- `@@unique([groupId, userId])` — a person can't have two membership rows
+  in the same group.
+- `@@unique([groupId, position])` — **no two people can hold the same slot
+  in the same group.** This is what makes "slot 3 is taken" a real,
+  database-enforced fact, not something the application has to carefully
+  check by convention.
+
+**`totalSlots` semantics, now explicit:** `Group.totalSlots` counts the
+Organizer's own slot. A 10-slot group means the Organizer holds slot 1, and
+slots 2–10 (9 slots) are available for Members. No schema change needed for
+this — it's just how the number is used.
 
 ## 5. `Invite`
 
@@ -226,12 +257,14 @@ boolean like `hasReceivedPayout`) makes it impossible to later track
 *how* a payout happened, who confirmed it, or if it failed/reversed.
 
 **Notable fields:**
-- `position` — this person's turn number in the rotation.
+- `position` — **removed.** This was a duplicate of `GroupMember.position`
+  — the same "who owns which slot" fact stored in two places, which is
+  exactly the kind of thing that quietly drifts out of sync. `PayoutOrder`
+  now reads a member's slot via the relation (`groupMember.position`)
+  instead of storing its own copy.
 - `@@unique([cycleId])` — exactly one designated recipient per round.
-- `@@unique([groupMemberId])` — each member gets exactly **one** turn across
-  the whole rotation, full stop. (This single constraint, combined with the
-  one above, makes duplicate/colliding positions structurally impossible —
-  no extra constraint on `position` itself needed.)
+- `@@unique([groupMemberId])` — each member gets exactly one turn across
+  the whole rotation.
 
 ---
 
@@ -320,3 +353,20 @@ sent 2 days before due date and again if overdue").
   means a new `Group`. Revisit if the product needs to support the same
   group of people running Ajo after Ajo without recreating membership each
   time.
+
+- **Organizer service fee:** confirmed by team research as a real practice
+  in traditional Esusu, but explicitly deferred to a future revenue phase.
+  No schema field reserved for it now — adding a placeholder column for
+  something not yet designed is premature. Revisit when pricing/monetization
+  is actually being built.
+
+- **~~Payout-week contribution exemption~~ — corrected, not parked.**
+  An earlier product-research draft assumed the recipient skips their
+  contribution during their own payout week. **Direct organizer interview
+  confirmed this is wrong** — every member, including the round's
+  recipient, contributes the full amount every round; the pot the organizer
+  pays out is always the sum of everyone's contribution, with no exemption
+  ("if not, the organisers will not send the money"). This is good news
+  for the build: it means contribution-generation logic needs **no special
+  case at all** — every `GroupMember` gets an identical `Contribution` row
+  each round, full stop.
