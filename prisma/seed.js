@@ -1,7 +1,5 @@
-import { prisma } from "../src/config/prisma.js";
+import prisma from "../src/config/prisma.js";
 import bcrypt from "bcrypt";
-
-const prisma = new PrismaClient();
 
 async function main() {
   // Seed Super Admin
@@ -185,4 +183,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  });
+  });prisma.$disconnect();
