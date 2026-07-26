@@ -1,79 +1,107 @@
+// contributions.service.js — fully implemented
 import {
   findGroupSchedule,
   findContributionById,
-  updateContribution,
-  createContributionStatusLog,
+  applyStatusTransition,
 } from "./contributions.model.js";
 
-/**
- * Returns the contribution schedule for a group.
- */
+// getContributionSchedule
 export async function getContributionSchedule(groupId) {
   return findGroupSchedule(groupId);
 }
 
-/**
- * Member submits proof of payment.
- *
- * TODO:
- * - Ensure contribution exists.
- * - Ensure authenticated user owns the contribution.
- * - Ensure contribution is still pending.
- * - Upload/store proof of payment.
- * - Update contribution:
- *      status -> "submitted"
- *      proofOfPaymentUrl
- * - Create ContributionStatusLog.
- * - Return updated contribution.
- */
-export async function submitPayment(
-  contributionId,
-  userId,
-  proofOfPaymentUrl
-) {
-  throw new Error("submitPayment() not implemented.");
+// submitPayment, steps: 1: find contribution, 2: update contribution
+export async function submitPayment(contributionId, userId, proofOfPaymentUrl) {
+  // find contribution first in case it doesn't exist
+  const contribution = await findContributionById(contributionId);
+  if (!contribution) {
+    const err = new Error("Contribution not found");
+    err.status = 404;
+    throw err;
+  }
+
+  // check if contribution belongs to user
+  if (contribution.groupMember.userId !== userId) {
+    const err = new Error("You can only submit payment for your own contribution");
+    err.status = 403;
+    throw err;
+  }
+
+  // check if contribution is pending
+  if (contribution.status !== "pending") {
+    const err = new Error(`Cannot submit payment — contribution is already "${contribution.status}"`);
+    err.status = 409;
+    throw err;
+  }
+
+  // update contribution
+  return applyStatusTransition(
+    contributionId,
+    { status: "pending_confirmation", proofOfPaymentUrl },
+    { oldStatus: "pending", newStatus: "pending_confirmation", actedById: userId }
+  );
 }
 
-/**
- * Organizer confirms a contribution payment.
- *
- * TODO:
- * - Ensure contribution exists.
- * - Ensure authenticated user is organizer.
- * - Ensure contribution is submitted.
- * - Update:
- *      status -> "confirmed"
- *      confirmedById
- *      confirmedAt
- * - Create ContributionStatusLog.
- * - Return updated contribution.
- */
-export async function confirmContribution(
-  contributionId,
-  organizerId,
-  note
-) {
-  throw new Error("confirmContribution() not implemented.");
+// confirmContribution
+export async function confirmContribution(contributionId, organizerId, note) {
+  // find contribution first in case it doesn't exist
+  const contribution = await findContributionById(contributionId);
+  if (!contribution) {
+    const err = new Error("Contribution not found");
+    err.status = 404;
+    throw err;
+  }
+
+  // check if contribution belongs to user
+  if (contribution.groupMember.group.organizerId !== organizerId) {
+    const err = new Error("You are not the organizer of this group");
+    err.status = 403;
+    throw err;
+  }
+
+  // check if contribution is pending
+  if (contribution.status !== "pending_confirmation") {
+    const err = new Error(`Cannot confirm — contribution is "${contribution.status}", not awaiting confirmation`);
+    err.status = 409;
+    throw err;
+  }
+
+  // update contribution, with organize Id and date
+  return applyStatusTransition(
+    contributionId,
+    { status: "confirmed", confirmedById: organizerId, confirmedAt: new Date() },
+    { oldStatus: "pending_confirmation", newStatus: "confirmed", actedById: organizerId, note }
+  );
 }
 
-/**
- * Organizer rejects a submitted payment.
- *
- * TODO:
- * - Ensure contribution exists.
- * - Ensure authenticated user is organizer.
- * - Ensure contribution is submitted.
- * - Update:
- *      status -> "rejected"
- *      rejectionReason
- * - Create ContributionStatusLog.
- * - Return updated contribution.
- */
-export async function rejectContribution(
-  contributionId,
-  organizerId,
-  rejectionReason,
-  note
-) {
-  throw new Error("rejectContribution() not implemented.");
+// rejectContribution
+export async function rejectContribution(contributionId, organizerId, rejectionReason, note) {
+  // find contribution first in case it doesn't exist
+  const contribution = await findContributionById(contributionId);
+  if (!contribution) {
+    const err = new Error("Contribution not found");
+    err.status = 404;
+    throw err;
+  }
+
+  // check if contribution belongs to user
+  if (contribution.groupMember.group.organizerId !== organizerId) {
+    const err = new Error("You are not the organizer of this group");
+    err.status = 403;
+    throw err;
+  }
+
+  // check if contribution is pending
+  if (contribution.status !== "pending_confirmation") {
+    const err = new Error(`Cannot reject — contribution is "${contribution.status}", not awaiting confirmation`);
+    err.status = 409;
+    throw err;
+  }
+
+  // update contribution with new status
+  return applyStatusTransition(
+    contributionId,
+    { status: "rejected", rejectionReason },
+    { oldStatus: "pending_confirmation", newStatus: "rejected", actedById: organizerId, note }
+  );
 }

@@ -132,3 +132,16 @@ export function findContributionByIdWithRelations(id) {
     },
   });
 }
+
+export function applyStatusTransition(contributionId, updateData, logData) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.contribution.update({
+      where: { id: contributionId },
+      data: updateData,
+    });
+    await tx.contributionStatusLog.create({
+      data: { ...logData, contributionId },
+    });
+    return updated;
+  })
+}

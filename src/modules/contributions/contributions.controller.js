@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import {
   groupScheduleParamsSchema,
   contributionIdParamsSchema,
+  submitPaymentSchema,
   confirmContributionSchema,
   rejectContributionSchema,
 } from "./contributions.validation.js";
@@ -16,21 +17,14 @@ import {
 
 export const getSchedule = asyncHandler(async (req, res) => {
   const { id } = groupScheduleParamsSchema.parse(req.params);
-
   const schedule = await getContributionSchedule(id);
-
   res.status(200).json(schedule);
 });
 
 export const submitContributionPayment = asyncHandler(async (req, res) => {
   const { id } = contributionIdParamsSchema.parse(req.params);
-
-  const contribution = await submitPayment(
-    id,
-    req.user.id,
-    req.body
-  );
-
+  const { proofOfPaymentUrl } = submitPaymentSchema.parse(req.body);
+  const contribution = await submitPayment(id, req.user.id, proofOfPaymentUrl);
   res.status(200).json({
     message: "Payment submitted successfully.",
     contribution,
@@ -39,15 +33,8 @@ export const submitContributionPayment = asyncHandler(async (req, res) => {
 
 export const confirmContributionPayment = asyncHandler(async (req, res) => {
   const { id } = contributionIdParamsSchema.parse(req.params);
-
   const { note } = confirmContributionSchema.parse(req.body);
-
-  const contribution = await confirmContribution(
-    id,
-    req.user.id,
-    note
-  );
-
+  const contribution = await confirmContribution(id, req.user.id, note);
   res.status(200).json({
     message: "Contribution confirmed successfully.",
     contribution,
@@ -56,16 +43,8 @@ export const confirmContributionPayment = asyncHandler(async (req, res) => {
 
 export const rejectContributionPayment = asyncHandler(async (req, res) => {
   const { id } = contributionIdParamsSchema.parse(req.params);
-
   const { rejectionReason, note } = rejectContributionSchema.parse(req.body);
-
-  const contribution = await rejectContribution(
-    id,
-    req.user.id,
-    rejectionReason,
-    note
-  );
-
+  const contribution = await rejectContribution(id, req.user.id, rejectionReason, note);
   res.status(200).json({
     message: "Contribution rejected successfully.",
     contribution,
