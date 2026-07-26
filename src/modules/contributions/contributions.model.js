@@ -145,3 +145,42 @@ export function applyStatusTransition(contributionId, updateData, logData) {
     return updated;
   })
 }
+
+export function findGroupForRotationStart(groupId) {
+  return prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      groupMembers: { where: {joinStatus: "active"},
+    orderBy: { position: "asc"} },
+    contributionCycles: true
+    },
+  });
+}
+
+export function createRotationSchedule(groupId, cyclesData) {
+  return prisma.$transaction(async (tx) => {
+    const createdCycles = [];
+    for (const c of cyclesData) {
+      const cycle = await tx.contributionCycle.create({
+        data: { groupId, cycleNumber: c.cycleNumber, status: "active" },
+      });
+
+      await tx.contribution.createMany({
+        data: c.contributions.map((member) => ({
+          cycleId: cycle.id,
+          groupMemberId: member.groupMemberId,
+          dueDate: c.dueDate,
+          amount: member.amount,
+          status: "pending",
+        })),
+      });
+
+      await tx.payoutOrder.create({
+        data: { cycleId: cycle.id, groupMemberId: c.recipientGroupMemberId },
+      });
+
+      createdCycles.push(cycle);
+    }
+    return createdCycles;
+  });
+}

@@ -7,6 +7,7 @@ import {
   submitContributionPayment,
   confirmContributionPayment,
   rejectContributionPayment,
+  startGroupRotation,
 } from "./contributions.controller.js";
 
 const router = Router();
@@ -30,5 +31,10 @@ router.patch("/contributions/:id/confirm", authenticate, authorize("organizer"),
  * Organizer rejects a submitted payment.
  */
 router.patch("/contributions/:id/reject", authenticate, authorize("organizer"), rejectContributionPayment);
+
+/**
+ * Organizer starts a group rotation.
+ */
+router.post("/groups/:id/start-rotation", authenticate, authorize("organizer"), startGroupRotation);
 
 export default router;
