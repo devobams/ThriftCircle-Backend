@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma.js";
-import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById,deleteAssignments,createAssignments} from "./backOffice.model.js";
+import {findAdminByPhoneNumber,createAdmin,findAllAdmins,findAdminById,deactivateAdmin,deleteAssignments,createAssignments} from "./backOffice.model.js";
 import {getAssignedGroups,getAssignedDisputes,resolveDispute,getPlatformAnalytics} from "./backOffice.model.js";
 
 const SALT_ROUNDS = 10;
