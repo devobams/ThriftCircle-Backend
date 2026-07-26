@@ -26,3 +26,10 @@ export const handleGetGroupById = asyncHandler(async (req, res) => {
 
   res.status(200).json(result);
 });
+
+export const handleJoinGroup = asyncHandler(async (req, res) => {
+  const parsedParams = groupIdParamSchema.parse(req.params);
+  const data = joinGroupSchema.parse(req.body);
+  const membership = await joinGroup(parsedParams.id, req.user.id, data);
+  res.status(201).json(membership);
+});
