@@ -370,3 +370,14 @@ sent 2 days before due date and again if overdue").
   for the build: it means contribution-generation logic needs **no special
   case at all** — every `GroupMember` gets an identical `Contribution` row
   each round, full stop.
+
+  - **Invite code validation on join — known gap, actively being closed.**
+  `groups.service.js`'s `joinGroup` currently accepts any non-empty
+  `invite_code` string without verifying it against a real `Invite` row —
+  the Invites module (code generation, resolution, expiry) hasn't been
+  built yet. This means, as of this point in the sprint, any authenticated
+  user who knows a group's UUID can join it directly, invite or not. This
+  is being actively closed as the next piece of work (Dev 2, Invites
+  module) — flagged here so it's visible, not silently shipped. Auth's
+  `resolveInviteStub` (Member registration flow) has the same underlying
+  dependency and will be swapped out by the Lead once Invites lands.
