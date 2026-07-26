@@ -13,6 +13,7 @@ import {
   submitPayment,
   confirmContribution,
   rejectContribution,
+  startRotation,
 } from "./contributions.service.js";
 
 export const getSchedule = asyncHandler(async (req, res) => {
@@ -49,4 +50,10 @@ export const rejectContributionPayment = asyncHandler(async (req, res) => {
     message: "Contribution rejected successfully.",
     contribution,
   });
+});
+
+export const startGroupRotation = asyncHandler(async (req, res) => {
+  const { id } = groupScheduleParamsSchema.parse(req.params);
+  const cycles = await startRotation(id, req.user.id);
+  res.status(201).json({ message: "Rotation started successfully.", cyclesCreated: cycles.length });
 });
