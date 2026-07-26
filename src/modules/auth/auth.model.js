@@ -1,4 +1,4 @@
-import prisma from "../../config/prisma.js";
+import {prisma} from "../src/config/prisma.js";
 
 export async function findUserByPhoneNumber(phoneNumber) {
     return prisma.user.findUnique({

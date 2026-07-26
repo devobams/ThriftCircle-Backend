@@ -1,4 +1,4 @@
-import prisma from "../../config/prisma.js";
+import {prisma} from "../src/config/prisma.js";
 
 //Find admin by phone number
 export function findAdminByPhoneNumber(phoneNumber) {
