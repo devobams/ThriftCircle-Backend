@@ -87,7 +87,7 @@ export async function listAssignedDisputes(adminId) {
   return await getAssignedDisputes(groupIds);
 }
 
-export async function resolveAdminDispute(disputeId,data) {
+export async function resolveAdminDispute(disputeId,data,adminId) {
   const dispute = await prisma.dispute.findUnique({
     where: {id: disputeId}
   });
@@ -98,12 +98,21 @@ export async function resolveAdminDispute(disputeId,data) {
     throw err;
   }
 
+  const assignments = await getAssignedGroups(adminId);
+  const assignedGroupIds = assignments.map((assignment) => assignment.groupId);
+  
+  if(!assignedGroupIds.includes(dispute.groupId)){
+    const err = new Error ("This dispute is not in one of your assigned groups");
+    err.status = 403;
+    throw err;
+  }
+
   if (dispute.status === "resolved") {
     const err = new Error("Dispute is already resolved");
     err.status = 409;
     throw err;
   }
-  const updatedDispute = await resolveDispute(disputeId,data.status);
+  const updatedDispute = await resolveDispute(disputeId);
   return {message: "Dispute resolved successfully",dispute: updatedDispute};
 }
 

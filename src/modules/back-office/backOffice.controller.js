@@ -48,7 +48,7 @@ export const handleAssignedDisputes = asyncHandler(async (req, res) => {
 export const handleResolveDispute = asyncHandler(async (req, res) => {
   const {id} = disputeIdParamSchema.parse(req.params);
   const data = resolveDisputeSchema.parse(req.body);
-  const result = await resolveAdminDispute(id,data);
+  const result = await resolveAdminDispute(id,data,req.user.id);
   res.status(200).json(result);
 });
 
