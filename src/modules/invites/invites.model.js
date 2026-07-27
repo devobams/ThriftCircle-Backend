@@ -1,4 +1,3 @@
-
 import prisma from "../../config/prisma.js";
 
 export function createInviteRecord(data) {
@@ -20,5 +19,18 @@ export function markInviteUsed(inviteId) {
   return prisma.invite.update({
     where: { id: inviteId },
     data: { status: "used" },
+  });
+}
+
+export function updateInviteStatus(inviteId, status) {
+  return prisma.invite.update({
+    where: { id: inviteId },
+    data: { status },
+  });
+}
+
+export function findActivePendingInvitesForGroup(groupId) {
+  return prisma.invite.findMany({
+    where: { groupId, status: "pending" },
   });
 }
