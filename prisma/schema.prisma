@@ -45,6 +45,12 @@ enum JoinStatus {
   removed
 }
 
+enum JoinRequestStatus {
+  pending
+  approved
+  rejected
+}
+
 enum InviteStatus {
   pending
   used
@@ -117,6 +123,9 @@ model User {
   disputesRaised   Dispute[] @relation("RaisedBy")
   disputesInvolved Dispute[] @relation("InvolvedMember")
 
+  joinRequestsMade     JoinRequest[] @relation("JoinRequestUser")
+  joinRequestsReviewed JoinRequest[] @relation("JoinRequestReviewedBy")
+
   notifications Notification[]
 
   @@map("users")
@@ -141,6 +150,7 @@ model Group {
 
   groupMembers          GroupMember[]
   invites               Invite[]
+  joinRequests          JoinRequest[]
   contributionCycles    ContributionCycle[]
   adminGroupAssignments AdminGroupAssignment[]
   disputes              Dispute[]
@@ -160,7 +170,7 @@ model GroupMember {
   user  User  @relation(fields: [userId], references: [id])
 
   contributions Contribution[]
-  payoutOrders  PayoutOrder[]
+  payoutOrder  PayoutOrder?
 
   @@unique([groupId, userId])
   @@unique([groupId, position]) // two people can't hold the same slot in the group
@@ -181,6 +191,22 @@ model Invite {
   createdBy User  @relation("InviteCreatedBy", fields: [createdById], references: [id])
 
   @@map("invites")
+}
+
+model JoinRequest {
+  id           String            @id @default(uuid())
+  groupId      String            @map("group_id")
+  userId       String            @map("user_id")
+  status       JoinRequestStatus @default(pending)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  reviewedAt   DateTime?         @map("reviewed_at")
+  reviewedById String?           @map("reviewed_by")
+
+  group      Group @relation(fields: [groupId], references: [id])
+  user       User  @relation("JoinRequestUser", fields: [userId], references: [id])
+  reviewedBy User? @relation("JoinRequestReviewedBy", fields: [reviewedById], references: [id])
+
+  @@map("join_requests")
 }
 
 // ─────────────────────────────
