@@ -170,7 +170,7 @@ model GroupMember {
   user  User  @relation(fields: [userId], references: [id])
 
   contributions Contribution[]
-  payoutOrders  PayoutOrder[]
+  payoutOrder  PayoutOrder?
 
   @@unique([groupId, userId])
   @@unique([groupId, position]) // two people can't hold the same slot in the group
