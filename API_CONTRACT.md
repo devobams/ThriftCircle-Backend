@@ -284,3 +284,29 @@ Unchanged from v2.
 
 All other error conventions (401/403 for auth, 404 for missing resources)
 unchanged from existing `errorHandler.js` behavior.
+
+### `POST /groups/:id/join`
+
+**Access:** Authenticated (any role — an already-registered user joining a
+second group, per TRD v2 Section 3.2)
+
+**Request body:**
+```json
+{
+  "invite_code": "abc123",
+  "position": 4
+}
+```
+`position` optional — `2` through `total_slots` (slot 1 is always the
+Organizer's). Omit for auto-assignment to the lowest available slot.
+
+**Responses:**
+- `201` — membership created
+- `404` — group not found
+- `409` — group full, or requested slot already taken (message lists
+  available slots)
+- `400` — position outside valid range
+
+** Known gap (tracked, being closed):** `invite_code` is not yet verified
+against a real `Invite` record — see NOTES.md Parked Decisions. Do not
+treat this endpoint as access-controlled by invite until that lands.
