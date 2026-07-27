@@ -77,7 +77,8 @@ export async function updateAssignments(adminId,groupIds,superAdminId
 
 // Scoped Groups
 export async function listAssignedGroups(adminId) {
-  return await getAssignedGroups(adminId);
+    const assignments= await getAssignedGroups(adminId);
+    return assignments.map((assignment) => assignment.group)
 }
 
 // Scoped Disputes
