@@ -6,6 +6,7 @@ import {
   findActivePendingInvitesForGroup,
 } from "./invites.model.js";
 import { findGroupById, countActiveMembers } from "../groups/groups.model.js";
+import prisma from "../../config/prisma.js";
 
 const INVITE_EXPIRY_DAYS = 7;
 
@@ -35,24 +36,20 @@ export async function createInvite(groupId, requestingUserId, data) {
     expires_at: invite.expiresAt,
   };
 }
-
-// PROPOSAL: expires all currently-pending codes for this group before
-// issuing a new one (assumes "one live code at a time"). Flag for review.
 export async function regenerateInvite(groupId, requestingUserId) {
   const group = await findGroupById(groupId);
   if (!group) return { notFound: true };
   if (group.organizerId !== requestingUserId) return { forbidden: true };
 
   const activeInvites = await findActivePendingInvitesForGroup(groupId);
-  await Promise.all(
-    activeInvites.map((inv) => updateInviteStatus(inv.id, "expired"))
+  await prisma.$transaction(
+    activeInvites.map((inv) =>
+      prisma.invite.update({ where: { id: inv.id }, data: { status: "expired" } })
+    )
   );
 
   return createInvite(groupId, requestingUserId, {});
 }
-
-// PROPOSAL: reuses "expired" status for manual disable (no distinct
-// "disabled" value exists in the schema). Flag for review.
 export async function disableInvite(groupId, requestingUserId) {
   const group = await findGroupById(groupId);
   if (!group) return { notFound: true };
@@ -61,13 +58,14 @@ export async function disableInvite(groupId, requestingUserId) {
   const activeInvites = await findActivePendingInvitesForGroup(groupId);
   if (activeInvites.length === 0) return { noneActive: true };
 
-  await Promise.all(
-    activeInvites.map((inv) => updateInviteStatus(inv.id, "expired"))
+  await prisma.$transaction(
+    activeInvites.map((inv) =>
+      prisma.invite.update({ where: { id: inv.id }, data: { status: "expired" } })
+    )
   );
 
   return { disabled: true };
 }
-
 export async function resolveInvite(code) {
   const invite = await findInviteByCode(code);
 

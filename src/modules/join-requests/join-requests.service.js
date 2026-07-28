@@ -78,18 +78,23 @@ export async function getAvailableSlots(groupId, requestingUserId) {
 
   return { available_positions: available };
 }
-
 export async function selectPosition(joinRequestId, requestingUserId, position) {
   const joinRequest = await findJoinRequestById(joinRequestId);
   if (!joinRequest) return { notFound: true };
   if (joinRequest.userId !== requestingUserId) return { forbidden: true };
   if (joinRequest.status !== "approved") return { notApproved: true };
+  if (position > joinRequest.group.totalSlots) return { invalidPosition: true };
 
   try {
     const member = await createGroupMemberFromRequest(joinRequest.groupId, requestingUserId, position);
     return { joined: true, position: member.position };
   } catch (err) {
-    if (err.code === "P2002") return { positionTaken: true };
+    if (err.code === "P2002") {
+      const target = err.meta?.target ?? [];
+      if (target.includes("position")) return { positionTaken: true };
+      if (target.includes("user_id")) return { alreadyMember: true };
+      return { positionTaken: true };
+    }
     throw err;
   }
 }

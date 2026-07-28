@@ -76,7 +76,6 @@ export const handleGetAvailableSlots = asyncHandler(async (req, res) => {
 
   res.status(200).json(result);
 });
-
 export const handleSelectPosition = asyncHandler(async (req, res) => {
   const { id } = joinRequestIdParamSchema.parse(req.params);
   const { position } = selectPositionSchema.parse(req.body);
@@ -86,7 +85,9 @@ export const handleSelectPosition = asyncHandler(async (req, res) => {
   if (result.notFound) return res.status(404).json({ message: "Join request not found" });
   if (result.forbidden) return res.status(403).json({ message: "This is not your join request" });
   if (result.notApproved) return res.status(400).json({ message: "This request has not been approved yet" });
+  if (result.invalidPosition) return res.status(400).json({ message: "That position doesn't exist in this group" });
   if (result.positionTaken) return res.status(409).json({ message: "This position was just taken, please pick another" });
+  if (result.alreadyMember) return res.status(409).json({ message: "You are already a member of this group" });
 
   res.status(201).json({ message: "Joined successfully", position: result.position });
 });
