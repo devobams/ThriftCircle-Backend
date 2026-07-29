@@ -15,6 +15,7 @@ export async function createGroup(organizerId, data) {
     total_slots: group.totalSlots,
     frequency: group.frequency,
     payout_order_type: group.payoutOrderType,
+    start_date: group.startDate,
     status: group.status,
     organizer_position: 1,
     slots_filled: 1,

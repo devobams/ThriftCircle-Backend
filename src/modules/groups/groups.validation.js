@@ -11,7 +11,15 @@ export const createGroupSchema = z.object({
     .min(2, "A group needs at least 2 slots")
     .max(100, "A group cannot exceed 100 slots"),
   frequency: z.enum(["weekly", "monthly"]),
-  payout_order_type: z.enum(["fixed", "rotating"]),
+  payout_order_type: z.enum(["self_selected", "organizer_assigned"]).default("self_selected"),
+  start_date: z.coerce.date().refine(
+    (date) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return date >= today;
+    },
+    { message: "start_date cannot be in the past" }
+  ).optional(),
 });
 
 export const groupIdParamSchema = z.object({
