@@ -35,3 +35,14 @@ export const rejectContributionSchema = z.object({
     .max(500)
     .optional(),
 });
+
+export const startRotationSchema = z.object({
+  start_date: z.coerce.date().refine(
+    (date) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return date >= today;
+    },
+    { message: "start_date cannot be in the past" }
+  ).optional(),
+});

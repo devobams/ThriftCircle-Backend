@@ -4,11 +4,22 @@ import {
   applyStatusTransition,
   findGroupForRotationStart,
   createRotationSchedule,
+  findGroupMembershipForUser
 } from "./contributions.model.js";
+import { updateGroupStartDate } from "../groups/groups.model.js";
 
-// getContributionSchedule
-export async function getContributionSchedule(groupId) {
-  return findGroupSchedule(groupId);
+import { stripPasswordHash } from "../../utils/sanitizeUser.js";
+
+
+export async function getContributionSchedule(groupId, requestingUserId) {
+  const membership = await findGroupMembershipForUser(groupId, requestingUserId);
+  if (!membership) {
+    const err = new Error("You are not a member of this group");
+    err.status = 403;
+    throw err;
+  }
+  const schedule = await findGroupSchedule(groupId);
+  return stripPasswordHash(schedule);
 }
 
 // submitPayment, steps: 1: find contribution, 2: update contribution
@@ -75,6 +86,42 @@ export async function confirmContribution(contributionId, organizerId, note) {
   );
 }
 
+// get details and status of your contribution
+export async function getContributionDetail(contributionId, requestingUserId) {
+  const contribution = await findContributionById(contributionId);
+  if (!contribution) {
+    const err = new Error("Contribution not found");
+    err.status = 404;
+    throw err;
+  }
+  const isOwner = contribution.groupMember.userId === requestingUserId;
+  const isOrganizer = contribution.groupMember.group.organizerId === requestingUserId;
+  if (!isOwner && !isOrganizer) {
+    const err = new Error("Not authorized to view this contribution");
+    err.status = 403;
+    throw err;
+  }
+
+  return stripPasswordHash({
+    id: contribution.id,
+    status: contribution.status,
+    amount: contribution.amount,
+    due_date: contribution.dueDate,
+    submitted_proof_url: contribution.proofOfPaymentUrl,
+    organizer_name: contribution.groupMember.group.organizer?.fullName, // confirm findContributionById includes this
+    confirmed_at: contribution.confirmedAt,
+    rejection_reason: contribution.rejectionReason,
+  });
+}
+
+export async function getCurrentCycle(groupId) {
+  const schedule = await findGroupSchedule(groupId);
+  const current = schedule.contributionCycles
+    .filter((c) => c.status !== "completed")
+    .sort((a, b) => a.cycleNumber - b.cycleNumber)[0];
+  return current ?? null;
+}
+
 // rejectContribution
 export async function rejectContribution(contributionId, organizerId, rejectionReason, note) {
   // find contribution first in case it doesn't exist
@@ -115,43 +162,38 @@ function computeDueDate(startDate, frequency, cycleNumber) {
   return date;
 }
 
-export async function startRotation(gorupId, organizerId) {
-  const group = await findGroupForRotationStart(gorupId);
+export async function startRotation(groupId, organizerId, requestedStartDate) {
+  const group = await findGroupForRotationStart(groupId);
   if (!group) {
     const err = new Error("Group not found");
     err.status = 404;
     throw err;
   }
-
   if (group.organizerId !== organizerId) {
     const err = new Error("You are not the organizer of this group");
     err.status = 403;
     throw err;
   }
-
   if (group.contributionCycles.length > 0) {
     const err = new Error("This group's rotation has already started");
     err.status = 409;
     throw err;
   }
-
   if (group.groupMembers.length !== group.totalSlots) {
-    const err = new Error(`Cannot start - ${group.groupMembers.length}/${group.totalSlots} slots filled`);
+    const err = new Error(`Cannot start — ${group.groupMembers.length}/${group.totalSlots} slots filled`);
     err.status = 409;
     throw err;
   }
 
-  const startDate = new Date();
+  // Precedence: explicit override at start-rotation > date set at group creation > today
+  const startDate = requestedStartDate ?? group.startDate ?? new Date();
   const cyclesData = [];
-
   for (let round = 1; round <= group.totalSlots; round++) {
     const recipient = group.groupMembers.find((m) => m.position === round);
     cyclesData.push({
       cycleNumber: round,
       dueDate: computeDueDate(startDate, group.frequency, round),
       recipientGroupMemberId: recipient.id,
-      // every member contributes every round, no exemption for the recipient
-      // — confirmed directly by organizer interview, see NOTES.md
       contributions: group.groupMembers.map((m) => ({
         groupMemberId: m.id,
         amount: group.contributionAmount,
@@ -159,5 +201,7 @@ export async function startRotation(gorupId, organizerId) {
     });
   }
 
-  return createRotationSchedule(group.id, cyclesData);
+  await updateGroupStartDate(groupId, startDate); // persist for dashboard/reports later
+
+  return createRotationSchedule(groupId, cyclesData);
 }

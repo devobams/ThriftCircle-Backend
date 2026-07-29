@@ -17,11 +17,33 @@ export async function createJoinRequest(groupId, userId, inviteCode) {
   if (!inviteResult.valid) return { invalid: true, reason: inviteResult.reason };
   if (inviteResult.groupId !== groupId) return { invalid: true, reason: "code_wrong_group" };
 
+  const existingMembership = await findGroupMembership(groupId, userId);
+  if (existingMembership) return { alreadyMember: true };
+
   const existing = await findPendingRequest(groupId, userId);
   if (existing) return { alreadyRequested: true };
 
   const joinRequest = await createJoinRequestRecord(groupId, userId);
   return { created: true, joinRequest };
+}
+
+export async function getJoinRequestStatus(joinRequestId, requestingUserId) {
+  const joinRequest = await findJoinRequestById(joinRequestId);
+  if (!joinRequest) return { notFound: true };
+
+  const isRequester = joinRequest.userId === requestingUserId;
+  const isOrganizer = joinRequest.group.organizerId === requestingUserId;
+  if (!isRequester && !isOrganizer) return { forbidden: true };
+
+  return {
+    valid: true,
+    id: joinRequest.id,
+    status: joinRequest.status,
+    group_id: joinRequest.group.id,
+    group_name: joinRequest.group.name,
+    organizer_name: joinRequest.group.organizer.fullName,
+    date_created: joinRequest.createdAt,
+  };
 }
 
 export async function listPendingJoinRequests(groupId, requestingUserId) {

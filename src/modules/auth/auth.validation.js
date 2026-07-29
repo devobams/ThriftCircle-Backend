@@ -14,7 +14,7 @@ const memberRegiserSchema = z.object({
   phone_number: z.string().min(10),
   password: z.string().min(6),
   email: z.string().email().optional(),
-  invite_code: z.string().min(1)
+  // invite_code: z.string().min(1)
 })
 
 

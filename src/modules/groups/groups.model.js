@@ -10,6 +10,7 @@ export function createGroupWithOrganizer(organizerId, data) {
         totalSlots: data.total_slots,
         frequency: data.frequency,
         payoutOrderType: data.payout_order_type,
+        startDate: data.start_date ?? null,
       },
     });
 
@@ -39,5 +40,12 @@ export function findMembership(groupId, userId) {
 export function countActiveMembers(groupId) {
   return prisma.groupMember.count({
     where: { groupId, joinStatus: "active" },
+  });
+}
+
+export function updateGroupStartDate(groupId, startDate) {
+  return prisma.group.update({
+    where: { id: groupId },
+    data: { startDate },
   });
 }

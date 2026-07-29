@@ -1,4 +1,3 @@
-// payouts.service.js
 import prisma from "../../config/prisma.js";
 import {
   findPayoutOrdersByGroup,
@@ -7,14 +6,27 @@ import {
   findPayoutById,
   updatePayout,
 } from "./payouts.model.js";
+import { findGroupMembershipForUser } from "../contributions/contributions.model.js";
 
 // getPayoutOrder
-export async function getPayoutOrder(groupId) {
+export async function getPayoutOrder(groupId, requestingUserId) {
+  const membership = await findGroupMembershipForUser(groupId, requestingUserId);
+  if (!membership) {
+    const err = new Error("You are not a member of this group");
+    err.status = 403;
+    throw err;
+  }
   return findPayoutOrdersByGroup(groupId);
 }
 
 // getPayoutHistory
-export async function getPayoutHistory(groupId) {
+export async function getPayoutHistory(groupId, requestingUserId) {
+  const membership = await findGroupMembershipForUser(groupId, requestingUserId);
+  if (!membership) {
+    const err = new Error("You are not a member of this group");
+    err.status = 403;
+    throw err;
+  }
   return findPayoutsByGroup(groupId);
 }
 
@@ -69,7 +81,7 @@ export async function recordPayout(payoutOrderId, organizerId, { reference, proo
       where: { id: payoutOrder.cycleId },
       data: { status: "completed", completedAt: new Date() },
     });
-    return payout;
+    return { ...payout, recipient_name: payoutOrder.groupMember.user.fullName};
   });
 }
 

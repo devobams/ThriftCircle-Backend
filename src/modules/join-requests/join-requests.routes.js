@@ -9,6 +9,7 @@ import {
   handleRejectJoinRequest,
   handleGetAvailableSlots,
   handleSelectPosition,
+  handleGetJoinRequestStatus,
 } from "./join-requests.controller.js";
 
 const router = Router();
@@ -19,5 +20,6 @@ router.patch("/join-requests/:id/approve", authenticate, authorize("organizer"),
 router.patch("/join-requests/:id/reject", authenticate, authorize("organizer"), handleRejectJoinRequest);
 router.get("/groups/:id/available-slots", authenticate, handleGetAvailableSlots);
 router.post("/join-requests/:id/select-position", authenticate, handleSelectPosition);
+router.get("/join-requests/:id", authenticate, handleGetJoinRequestStatus);
 
 export default router;

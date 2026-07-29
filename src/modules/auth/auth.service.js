@@ -14,13 +14,14 @@ const SALT_ROUNDS = 10;
 // This stands in for a real `invites.model.js` lookup until Dev 2 hands off
 // the real thing on Day 5 (Sprint Guide, Day 5 checklist).
 // TODO(Day 5): replace with a real lookup against the Invite table.
-function resolveInviteStub(inviteCode) {
-  return {
-    groupId: "stub-group-id",
-    groupName: "Stub Group (placeholder until Invite module is ready)",
-    inviteValid: true,
-  };
-}
+
+// function resolveInviteStub(inviteCode) {
+//   return {
+//     groupId: "stub-group-id",
+//     groupName: "Stub Group (placeholder until Invite module is ready)",
+//     inviteValid: true,
+//   };
+// }
 
 function signToken(user) {
   return jwt.sign(
@@ -45,34 +46,16 @@ export async function registerUser(data) {
     err.status = 409;
     throw err;
   }
-
   const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
-  
-  let groupContext = null;
-  if (data.intent === "member") {
-    groupContext = resolveInviteStub(data.invite_code);
-    if (!groupContext.inviteValid) {
-      const err = new Error("Invalid or expired invite code");
-      err.status = 400;
-      throw err;
-    }
-  }
-
   const user = await createUser({
     fullName: data.full_name,
     phoneNumber: data.phone_number,
     email: data.email,
     passwordHash,
     role: data.intent,
-  })
-
+  });
   const token = signToken(user);
-
-  return {
-    user: toSafeUser(user),
-    token,
-    group_context: groupContext,
-  };
+  return { user: toSafeUser(user), token }; // no group_context anymore
 }
 
 export async function loginUser(data) {

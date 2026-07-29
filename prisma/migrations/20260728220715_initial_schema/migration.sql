@@ -11,10 +11,13 @@ CREATE TYPE "GroupStatus" AS ENUM ('active', 'completed', 'archived');
 CREATE TYPE "Frequency" AS ENUM ('weekly', 'monthly');
 
 -- CreateEnum
-CREATE TYPE "PayoutOrderType" AS ENUM ('fixed', 'rotating');
+CREATE TYPE "PayoutOrderType" AS ENUM ('self_selected', 'organizer_assigned');
 
 -- CreateEnum
 CREATE TYPE "JoinStatus" AS ENUM ('invited', 'active', 'removed');
+
+-- CreateEnum
+CREATE TYPE "JoinRequestStatus" AS ENUM ('pending', 'approved', 'rejected');
 
 -- CreateEnum
 CREATE TYPE "InviteStatus" AS ENUM ('pending', 'used', 'expired');
@@ -57,8 +60,9 @@ CREATE TABLE "groups" (
     "contribution_amount" DECIMAL(65,30) NOT NULL,
     "total_slots" INTEGER NOT NULL,
     "frequency" "Frequency" NOT NULL DEFAULT 'weekly',
-    "payout_order_type" "PayoutOrderType" NOT NULL,
+    "payout_order_type" "PayoutOrderType" NOT NULL DEFAULT 'self_selected',
     "status" "GroupStatus" NOT NULL DEFAULT 'active',
+    "start_date" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "groups_pkey" PRIMARY KEY ("id")
@@ -69,6 +73,7 @@ CREATE TABLE "group_members" (
     "id" TEXT NOT NULL,
     "group_id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
+    "position" INTEGER NOT NULL,
     "join_status" "JoinStatus" NOT NULL DEFAULT 'invited',
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -87,6 +92,19 @@ CREATE TABLE "invites" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "invites_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "join_requests" (
+    "id" TEXT NOT NULL,
+    "group_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "status" "JoinRequestStatus" NOT NULL DEFAULT 'pending',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "reviewed_at" TIMESTAMP(3),
+    "reviewed_by" TEXT,
+
+    CONSTRAINT "join_requests_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -146,7 +164,6 @@ CREATE TABLE "payout_order" (
     "id" TEXT NOT NULL,
     "cycle_id" TEXT NOT NULL,
     "group_member_id" TEXT NOT NULL,
-    "position" INTEGER NOT NULL,
 
     CONSTRAINT "payout_order_pkey" PRIMARY KEY ("id")
 );
@@ -198,6 +215,9 @@ CREATE UNIQUE INDEX "users_phone_number_key" ON "users"("phone_number");
 CREATE UNIQUE INDEX "group_members_group_id_user_id_key" ON "group_members"("group_id", "user_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "group_members_group_id_position_key" ON "group_members"("group_id", "position");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "invites_code_key" ON "invites"("code");
 
 -- CreateIndex
@@ -244,6 +264,15 @@ ALTER TABLE "invites" ADD CONSTRAINT "invites_group_id_fkey" FOREIGN KEY ("group
 
 -- AddForeignKey
 ALTER TABLE "invites" ADD CONSTRAINT "invites_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "join_requests" ADD CONSTRAINT "join_requests_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "join_requests" ADD CONSTRAINT "join_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "join_requests" ADD CONSTRAINT "join_requests_reviewed_by_fkey" FOREIGN KEY ("reviewed_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "admin_group_assignments" ADD CONSTRAINT "admin_group_assignments_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

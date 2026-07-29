@@ -310,3 +310,69 @@ Organizer's). Omit for auto-assignment to the lowest available slot.
 ** Known gap (tracked, being closed):** `invite_code` is not yet verified
 against a real `Invite` record — see NOTES.md Parked Decisions. Do not
 treat this endpoint as access-controlled by invite until that lands.
+
+## Auth — Updated
+
+`POST /auth/register` with `intent: "member"` no longer accepts or
+requires `invite_code`. Response no longer includes `group_context`.
+Member and Organizer registration are now identical in shape.
+
+## Groups — `POST /groups` request body, updated
+
+```json
+{
+  "name": "Test Group",
+  "contribution_amount": 5000,
+  "total_slots": 10,
+  "frequency": "weekly",
+  "payout_order_type": "self_selected",
+  "start_date": "2026-08-15"
+}
+```
+`payout_order_type` — optional, defaults to `self_selected`. Values:
+`self_selected` | `organizer_assigned` (latter reserved, no behavior yet).
+`start_date` — optional, cannot be in the past. See NOTES.md for full
+precedence rules against `start-rotation`'s own optional override.
+
+## Invites — `GET /invites/:code` response, updated
+
+```json
+{
+  "valid": true,
+  "group_id": "uuid",
+  "group_name": "...",
+  "organizer_name": "...",
+  "contribution_amount": 5000,
+  "frequency": "weekly",
+  "total_slots": 10,
+  "slots_filled": 3,
+  "slots_available": 7,
+  "invite_status": "pending"
+}
+```
+`group_id` added — required for the frontend to chain into
+`POST /groups/:id/join-requests`.
+
+## Join Requests — full endpoint list (as built)
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/groups/:id/join-requests` | Authenticated | Create a pending request. 409 if already a member; 409 if already has a pending request for this group. |
+| `GET` | `/join-requests/:id` | Requester or that group's organizer only | Status poll — "waiting room" screen |
+| `GET` | `/groups/:id/join-requests` | Organizer | List pending requests |
+| `PATCH` | `/join-requests/:id/approve` | Organizer | Approve — does not create GroupMember yet |
+| `PATCH` | `/join-requests/:id/reject` | Organizer | Reject |
+| `GET` | `/groups/:id/available-slots` | Approved requester | Open positions |
+| `POST` | `/join-requests/:id/select-position` | The requester, if approved | Creates GroupMember. 400 if position out of range, 409 if taken, 409 if already a member (distinguished by err.meta.target) |
+
+## Contributions — new endpoint
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/contributions/:id` | Contribution owner or that group's organizer | Single-contribution detail — status, amount, due date, proof URL, organizer name, rejection reason. For the payment-status UI screen. |
+
+## Access control — clarified across the board
+
+`GET /groups/:id/schedule`, `/groups/:id/payout-order`,
+`/groups/:id/payouts` all now require the caller to be an active member
+of that specific group (403 otherwise) — not just any authenticated user.

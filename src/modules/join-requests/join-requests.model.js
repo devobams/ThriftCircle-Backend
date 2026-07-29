@@ -23,7 +23,13 @@ export function findPendingRequestsForGroup(groupId) {
 export function findJoinRequestById(joinRequestId) {
   return prisma.joinRequest.findUnique({
     where: { id: joinRequestId },
-    include: { group: true },
+    include: { group: { include: { organizer: true } } },
+  });
+}
+
+export function findGroupMembership(groupId, userId) {
+  return prisma.groupMember.findUnique({
+    where: { groupId_userId: { groupId, userId } },
   });
 }
 

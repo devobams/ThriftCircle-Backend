@@ -35,8 +35,8 @@ enum Frequency {
 }
 
 enum PayoutOrderType {
-  fixed
-  rotating
+  self_selected      // current behavior: member picks their own available slot
+  organizer_assigned // reserved for future — organizer pre-assigns positions, not yet implemented
 }
 
 enum JoinStatus {
@@ -142,8 +142,9 @@ model Group {
   contributionAmount  Decimal         @map("contribution_amount")
   totalSlots          Int             @map("total_slots")
   frequency           Frequency       @default(weekly) @map("frequency")
-  payoutOrderType     PayoutOrderType @map("payout_order_type")
+  payoutOrderType     PayoutOrderType @default(self_selected) @map("payout_order_type") // was: fixed/rotating
   status              GroupStatus     @default(active)
+  startDate           DateTime?       @map("start_date") // organizer's planned first-contribution due date; can be set at creation or overridden at start-rotation
   createdAt           DateTime        @default(now()) @map("created_at")
 
   organizer  User @relation("GroupOrganizer", fields: [organizerId], references: [id])

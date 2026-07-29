@@ -13,13 +13,13 @@ import { getPayoutOrder, getPayoutHistory, recordPayout, updatePayoutStatus } fr
 
 export const getGroupPayoutOrder = asyncHandler(async (req, res) => {
   const { id } = groupIdParamsSchema.parse(req.params);
-  res.status(200).json(await getPayoutOrder(id));
+  res.status(200).json(await getPayoutOrder(id, req.user.id));
 });
 
 // payoutorder vs grouppayout => payoutorder is the plan, grouppayout is the execution
 export const getGroupPayouts = asyncHandler(async (req, res) => {
   const { id } = groupIdParamsSchema.parse(req.params);
-  res.status(200).json(await getPayoutHistory(id));
+  res.status(200).json(await getPayoutHistory(id, req.user.id));
 });
 
 export const recordGroupPayout = asyncHandler(async (req, res) => {
