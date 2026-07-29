@@ -45,7 +45,7 @@ async function main() {
       contributionAmount: 5000,
       totalSlots: 3,
       frequency: "weekly",
-      payoutOrderType: "fixed",
+      // payoutOrderType: "fixed",
       status: "active",
     },
   });
