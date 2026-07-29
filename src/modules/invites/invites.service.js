@@ -87,6 +87,7 @@ export async function getInvitePreview(code) {
 
   return {
     valid: true,
+    group_id: group.id,
     group_name: group.name,
     organizer_name: result.invite.group.organizer.fullName,
     contribution_amount: group.contributionAmount,
