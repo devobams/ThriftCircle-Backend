@@ -78,6 +78,16 @@ export function findGroupSchedule(groupId) {
 }
 
 /**
+ * Find Group Membership for a User
+ */
+export function findGroupMembershipForUser(groupId, userId) {
+  return prisma.groupMember.findUnique({
+    where: { groupId_userId: { groupId, userId } },
+  });
+}
+
+
+/**
  * Finds a contribution together with its status history.
  */
 export function findContributionWithStatusLog(id) {

@@ -6,6 +6,7 @@ import {
   submitPaymentSchema,
   confirmContributionSchema,
   rejectContributionSchema,
+  startRotationSchema,
 } from "./contributions.validation.js";
 
 import {
@@ -14,11 +15,12 @@ import {
   confirmContribution,
   rejectContribution,
   startRotation,
+  getContributionDetail,
 } from "./contributions.service.js";
 
 export const getSchedule = asyncHandler(async (req, res) => {
   const { id } = groupScheduleParamsSchema.parse(req.params);
-  const schedule = await getContributionSchedule(id);
+  const schedule = await getContributionSchedule(id, req.user.id);
   res.status(200).json(schedule);
 });
 
@@ -30,6 +32,12 @@ export const submitContributionPayment = asyncHandler(async (req, res) => {
     message: "Payment submitted successfully.",
     contribution,
   });
+});
+
+export const getContributionById = asyncHandler(async (req, res) => {
+  const { id } = contributionIdParamsSchema.parse(req.params);
+  const contribution = await getContributionDetail(id, req.user.id);
+  res.status(200).json(contribution);
 });
 
 export const confirmContributionPayment = asyncHandler(async (req, res) => {
@@ -54,6 +62,7 @@ export const rejectContributionPayment = asyncHandler(async (req, res) => {
 
 export const startGroupRotation = asyncHandler(async (req, res) => {
   const { id } = groupScheduleParamsSchema.parse(req.params);
-  const cycles = await startRotation(id, req.user.id);
+  const { start_date } = startRotationSchema.parse(req.body);
+  const cycles = await startRotation(id, req.user.id, start_date);
   res.status(201).json({ message: "Rotation started successfully.", cyclesCreated: cycles.length });
 });
