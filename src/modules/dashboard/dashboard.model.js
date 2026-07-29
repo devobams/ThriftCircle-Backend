@@ -49,6 +49,7 @@ export function findNextPayout(groupId) {
         cycleNumber: "asc",
       },
     },
+    
     include: {
       cycle: true,
       groupMember: {
