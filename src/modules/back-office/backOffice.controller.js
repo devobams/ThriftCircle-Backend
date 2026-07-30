@@ -1,13 +1,27 @@
-import {asyncHandler} from "../../utils/asyncHandler.js";
-import {createAdminSchema,adminIdParamSchema,updateAssignmentsSchema,disputeIdParamSchema,resolveDisputeSchema,analyticsQuerySchema} from "./backOffice.validation.js";
-import {createAdminAccount,listAdmins,deactivateAdminAccount,updateAssignments,listAssignedGroups,resolveAdminDispute,getAnalytics} from "./backOffice.service.js";
-import {listAssignedDisputes} from "./backOffice.service.js";
-
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import {
+  createAdminSchema,
+  adminIdParamSchema,
+  updateAssignmentsSchema,
+  disputeIdParamSchema,
+  resolveDisputeSchema,
+  analyticsQuerySchema,
+} from "./backOffice.validation.js";
+import {
+  createAdminAccount,
+  listAdmins,
+  deactivateAdminAccount,
+  updateAssignments,
+  listAssignedGroups,
+  resolveAdminDispute,
+  getAnalytics,
+} from "./backOffice.service.js";
+import { listAssignedDisputes } from "./backOffice.service.js";
 
 //POST /back-office/admins
 export const handleCreateAdmin = asyncHandler(async (req, res) => {
   const data = createAdminSchema.parse(req.body);
-  const result = await createAdminAccount(data,req.user.id);
+  const result = await createAdminAccount(data, req.user.id);
   res.status(201).json(result);
 });
 
@@ -19,36 +33,41 @@ export const handleListAdmins = asyncHandler(async (req, res) => {
 
 // PATCH /back-office/admins/:id/deactivate
 export const handleDeactivateAdmin = asyncHandler(async (req, res) => {
-  const {id} = adminIdParamSchema.parse(req.params);
+  const { id } = adminIdParamSchema.parse(req.params);
   const result = await deactivateAdminAccount(id);
   res.status(200).json(result);
 });
 
 // PATCH /back-office/admins/:id/assignments
- export const handleUpdateAssignments = asyncHandler(async (req, res) => {
-  const {id} = adminIdParamSchema.parse(req.params);
-  const {group_ids} = updateAssignmentsSchema.parse(req.body);
-  const result = await updateAssignments(id,group_ids,req.user.id);
+export const handleUpdateAssignments = asyncHandler(async (req, res) => {
+  const { id } = adminIdParamSchema.parse(req.params);
+  const { group_ids } = updateAssignmentsSchema.parse(req.body);
+  const result = await updateAssignments(id, group_ids, req.user.id);
   res.status(200).json(result);
 });
 
 //GET /back-office/groups
 export const handleAssignedGroups = asyncHandler(async (req, res) => {
-  const groups = await listAssignedGroups(req.user.id);
+  const groups = await listAssignedGroups(req.user.id, req.user.role);
   res.status(200).json(groups);
 });
 
 //GET /back-office/disputes
 export const handleAssignedDisputes = asyncHandler(async (req, res) => {
-  const disputes = await listAssignedDisputes(req.user.id);
+  const disputes = await listAssignedDisputes(req.user.id, req.user.role);
   res.status(200).json(disputes);
 });
 
 //PATCH  /back-office/disputes/:id
 export const handleResolveDispute = asyncHandler(async (req, res) => {
-  const {id} = disputeIdParamSchema.parse(req.params);
+  const { id } = disputeIdParamSchema.parse(req.params);
   const data = resolveDisputeSchema.parse(req.body);
-  const result = await resolveAdminDispute(id,data,req.user.id);
+  const result = await resolveAdminDispute(
+    id,
+    data,
+    req.user.id,
+    req.user.role,
+  );
   res.status(200).json(result);
 });
 
