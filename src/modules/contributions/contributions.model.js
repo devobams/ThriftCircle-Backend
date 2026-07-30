@@ -15,7 +15,7 @@ export function findContributionById(id) {
       groupMember: {
         include: {
           user: true,
-          group: true,
+          group: { include: { organizer: true } },
         },
       },
       confirmedBy: true,
@@ -86,7 +86,6 @@ export function findGroupMembershipForUser(groupId, userId) {
   });
 }
 
-
 /**
  * Finds a contribution together with its status history.
  */
@@ -153,16 +152,18 @@ export function applyStatusTransition(contributionId, updateData, logData) {
       data: { ...logData, contributionId },
     });
     return updated;
-  })
+  });
 }
 
 export function findGroupForRotationStart(groupId) {
   return prisma.group.findUnique({
     where: { id: groupId },
     include: {
-      groupMembers: { where: {joinStatus: "active"},
-    orderBy: { position: "asc"} },
-    contributionCycles: true
+      groupMembers: {
+        where: { joinStatus: "active" },
+        orderBy: { position: "asc" },
+      },
+      contributionCycles: true,
     },
   });
 }
