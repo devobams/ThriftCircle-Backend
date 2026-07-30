@@ -6,6 +6,7 @@ import contributionsRoutes from "../modules/contributions/contributions.routes.j
 import payoutsRoutes from "../modules/payouts/payouts.routes.js";
 import invitesRoutes from "../modules/invites/invites.routes.js";
 import joinRequestsRoutes from "../modules/join-requests/join-requests.routes.js";
+import disputesRoutes from "../modules/disputes/disputes.routes.js";
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use("/", contributionsRoutes);
 router.use("/", payoutsRoutes);
 router.use("/", invitesRoutes);
 router.use("/", joinRequestsRoutes);
+router.use("/", disputesRoutes);
 
 export default router;
