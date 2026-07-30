@@ -10,7 +10,7 @@ import {
   createAssignments,
   getAssignedGroups,
   getAssignedDisputes,
-  updateDisputeStatus,
+  updateDisputeStatusConditional,
   getPlatformAnalytics,
 } from "./backOffice.model.js";
 import { stripPasswordHash } from "../../utils/sanitizeUser.js";
@@ -129,19 +129,24 @@ export async function resolveAdminDispute(disputeId, data, adminId, role) {
       throw err;
     }
   }
-  if (dispute.status === "resolved" || dispute.status === "rejected") {
+
+  const isTerminal = data.status === "resolved" || data.status === "rejected";
+  const updateData = {
+    status: data.status,
+    resolvedAt: isTerminal ? new Date() : null,
+  };
+  if (data.resolution !== undefined) {
+    updateData.resolution = data.resolution;
+  }
+
+  const result = await updateDisputeStatusConditional(disputeId, updateData);
+  if (result.count === 0) {
     const err = new Error("This dispute has already been closed");
     err.status = 409;
     throw err;
   }
 
-  const isTerminal = data.status === "resolved" || data.status === "rejected";
-  const updatedDispute = await updateDisputeStatus(disputeId, {
-    status: data.status,
-    resolution: data.resolution ?? null,
-    resolvedAt: isTerminal ? new Date() : null,
-  });
-
+  const updatedDispute = await prisma.dispute.findUnique({ where: { id: disputeId } });
   return { message: `Dispute marked as ${data.status}`, dispute: updatedDispute };
 }
 

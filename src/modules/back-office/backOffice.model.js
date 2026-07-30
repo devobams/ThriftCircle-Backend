@@ -61,14 +61,6 @@ export function getAssignedDisputes(groupIds) {
   });
 }
 
-// Resolve dispute
-export function updateDisputeStatus(disputeId, data) {
-  return prisma.dispute.update({
-    where: { id: disputeId },
-    data,
-  });
-}
-
 //Platform analytics
 export function getPlatformAnalytics() {
   return prisma.$transaction([
@@ -77,4 +69,12 @@ export function getPlatformAnalytics() {
     prisma.group.count({ where: { status: "active" } }),
     prisma.dispute.count({ where: { status: "open" } }),
   ]);
+}
+
+
+export function updateDisputeStatusConditional(disputeId, data) {
+  return prisma.dispute.updateMany({
+    where: { id: disputeId, status: { in: ["open", "in_review"] } },
+    data,
+  });
 }
