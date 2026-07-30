@@ -7,6 +7,8 @@ import {
   updatePayout,
 } from "./payouts.model.js";
 import { findGroupMembershipForUser } from "../contributions/contributions.model.js";
+import { stripPasswordHash } from "../../utils/sanitizeUser.js";
+
 
 // getPayoutOrder
 export async function getPayoutOrder(groupId, requestingUserId) {
@@ -16,7 +18,8 @@ export async function getPayoutOrder(groupId, requestingUserId) {
     err.status = 403;
     throw err;
   }
-  return findPayoutOrdersByGroup(groupId);
+  const payoutOrders = await findPayoutOrdersByGroup(groupId);
+  return stripPasswordHash(payoutOrders);
 }
 
 // getPayoutHistory
@@ -27,7 +30,8 @@ export async function getPayoutHistory(groupId, requestingUserId) {
     err.status = 403;
     throw err;
   }
-  return findPayoutsByGroup(groupId);
+  const payouts = await findPayoutsByGroup(groupId);
+  return stripPasswordHash(payouts);
 }
 
 // recordPayout
