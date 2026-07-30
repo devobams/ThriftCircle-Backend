@@ -62,10 +62,10 @@ export function getAssignedDisputes(groupIds) {
 }
 
 // Resolve dispute
-export function resolveDispute(disputeId) {
+export function updateDisputeStatus(disputeId, data) {
   return prisma.dispute.update({
     where: { id: disputeId },
-    data: { status: "resolved" },
+    data,
   });
 }
 

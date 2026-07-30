@@ -8,14 +8,11 @@ import {
   deactivateAdmin,
   deleteAssignments,
   createAssignments,
-} from "./backOffice.model.js";
-import {
   getAssignedGroups,
   getAssignedDisputes,
-  resolveDispute,
+  updateDisputeStatus,
   getPlatformAnalytics,
 } from "./backOffice.model.js";
-
 import { stripPasswordHash } from "../../utils/sanitizeUser.js";
 
 const SALT_ROUNDS = 10;
@@ -132,13 +129,20 @@ export async function resolveAdminDispute(disputeId, data, adminId, role) {
       throw err;
     }
   }
-  if (dispute.status === "resolved") {
-    const err = new Error("Dispute is already resolved");
+  if (dispute.status === "resolved" || dispute.status === "rejected") {
+    const err = new Error("This dispute has already been closed");
     err.status = 409;
     throw err;
   }
-  const updatedDispute = await resolveDispute(disputeId);
-  return { message: "Dispute resolved successfully", dispute: updatedDispute };
+
+  const isTerminal = data.status === "resolved" || data.status === "rejected";
+  const updatedDispute = await updateDisputeStatus(disputeId, {
+    status: data.status,
+    resolution: data.resolution ?? null,
+    resolvedAt: isTerminal ? new Date() : null,
+  });
+
+  return { message: `Dispute marked as ${data.status}`, dispute: updatedDispute };
 }
 
 // Platform Analytics
