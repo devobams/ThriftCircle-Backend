@@ -26,7 +26,3 @@ export const groupIdParamSchema = z.object({
   id: z.string().uuid("Invalid group id"),
 });
 
-export const joinGroupSchema = z.object({
-  invite_code: z.string().min(1),
-  position: z.number().int().min(2).optional(),
-});
