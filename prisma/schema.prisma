@@ -79,7 +79,9 @@ enum PayoutStatus {
 
 enum DisputeStatus {
   open
+  in_review
   resolved
+  rejected
 }
 
 enum NotificationType {
@@ -257,6 +259,7 @@ model Contribution {
   dueDate           DateTime           @map("due_date")
   amount            Decimal
   status            ContributionStatus @default(pending)
+  disputes          Dispute[]
   proofOfPaymentUrl String?            @map("proof_of_payment_url")
   confirmedById     String?            @map("confirmed_by")
   confirmedAt       DateTime?          @map("confirmed_at")
@@ -327,13 +330,17 @@ model Dispute {
   groupId          String        @map("group_id")
   raisedById       String        @map("raised_by")
   involvedMemberId String?       @map("involved_member_id")
+  contributionId   String?       @map("contribution_id")
   description      String
+  resolution       String?
   status           DisputeStatus @default(open)
   createdAt        DateTime      @default(now()) @map("created_at")
+  resolvedAt       DateTime?     @map("resolved_at")
 
-  group          Group @relation(fields: [groupId], references: [id])
-  raisedBy       User  @relation("RaisedBy", fields: [raisedById], references: [id])
-  involvedMember User? @relation("InvolvedMember", fields: [involvedMemberId], references: [id])
+  group          Group        @relation(fields: [groupId], references: [id])
+  raisedBy       User         @relation("RaisedBy", fields: [raisedById], references: [id])
+  involvedMember User?        @relation("InvolvedMember", fields: [involvedMemberId], references: [id])
+  contribution Contribution?  @relation(fields: [contributionId], references: [id])
 
   @@index([status])
   @@map("disputes")
