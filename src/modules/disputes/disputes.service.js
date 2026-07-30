@@ -4,8 +4,11 @@ import {
   createDispute,
   findDisputeById,
   findDisputesByGroup,
+  findContributionInGroup,
 } from "./disputes.model.js";
 import { stripPasswordHash } from "../../utils/sanitizeUser.js";
+
+import { findGroupById, findMembership, createDispute, findDisputeById, findDisputesByGroup, findContributionInGroup } from "./disputes.model.js";
 
 export async function raiseDispute(groupId, userId, data) {
   const group = await findGroupById(groupId);
@@ -23,6 +26,24 @@ export async function raiseDispute(groupId, userId, data) {
     const err = new Error("You are not a member of this group");
     err.status = 403;
     throw err;
+  }
+
+  if (data.involved_member_id) {
+    const involvedMembership = await findMembership(groupId, data.involved_member_id);
+    if (!involvedMembership) {
+      const err = new Error("involved_member_id must be a member of this group");
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  if (data.contribution_id) {
+    const contribution = await findContributionInGroup(data.contribution_id, groupId);
+    if (!contribution) {
+      const err = new Error("contribution_id must belong to this group");
+      err.status = 400;
+      throw err;
+    }
   }
 
   const dispute = await createDispute({

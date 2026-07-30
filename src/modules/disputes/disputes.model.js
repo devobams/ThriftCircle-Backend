@@ -33,3 +33,12 @@ export function findDisputesByGroup(groupId) {
     include: { raisedBy: true, involvedMember: true, contribution: true },
   });
 }
+
+export function findContributionInGroup(contributionId, groupId) {
+  return prisma.contribution.findFirst({
+    where: {
+      id: contributionId,
+      groupMember: { groupId },
+    },
+  });
+}
