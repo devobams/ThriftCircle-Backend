@@ -1,12 +1,20 @@
 import { findContributionReport } from "./reports.model.js";
+import { findGroupById } from "../groups/groups.model.js";
 
-export async function getContributionReport(groupId, cycleId) {
+export async function getContributionReport(groupId, cycleId, requestingUserId) {
+  const group = await findGroupById(groupId);
+  if (!group) {
+    return { message: "Group not found." };
+  }
+  if (group.organizerId !== requestingUserId) {
+    const err = new Error("You are not the organizer of this group.");
+    err.status = 403;
+    throw err;
+  }
+
   const report = await findContributionReport(groupId, cycleId);
-
   if (!report) {
-    return {
-      message: "Contribution cycle not found.",
-    };
+    return { message: "Contribution cycle not found." };
   }
 
   const totalExpected = report.contributions.reduce(
