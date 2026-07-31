@@ -3,23 +3,23 @@ import {
   findNextPayout,
 } from "./dashboard.model.js";
 
+import { getCurrentCycle } from "../contributions/contributions.service.js";
+
+
 export async function getGroupDashboard(groupId, requestingUserId) {
   const group = await findGroupDashboard(groupId);
-
   if (!group) {
-      const err = new Error("Group not found.");
-      err.status = 404;
-      throw err;
+    const err = new Error("Group not found.");
+    err.status = 404;
+    throw err;
   }
-
   if (group.organizerId !== requestingUserId) {
     const err = new Error("You are not the organizer of this group.");
     err.status = 403;
     throw err;
   }
 
-  const currentCycle = group.contributionCycles[0];
-
+  const currentCycle = await getCurrentCycle(groupId);
   const contributions = currentCycle?.contributions ?? [];
 
   const totalExpected = contributions.reduce(
