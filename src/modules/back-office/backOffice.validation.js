@@ -38,7 +38,8 @@ export const disputeIdParamSchema = z.object({
 });
 
 export const resolveDisputeSchema = z.object({
-  status: z.enum(["resolved"]),
+  status: z.enum(["in_review", "resolved", "rejected"]),
+  resolution: z.string().trim().max(1000).optional(),
 });
 
 export const analyticsQuerySchema = z.object({});
