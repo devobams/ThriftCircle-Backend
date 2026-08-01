@@ -7,8 +7,7 @@ import payoutsRoutes from "../modules/payouts/payouts.routes.js";
 import invitesRoutes from "../modules/invites/invites.routes.js";
 import joinRequestsRoutes from "../modules/join-requests/join-requests.routes.js";
 import disputesRoutes from "../modules/disputes/disputes.routes.js";
-
-const router = Router();
+import organizerDashboardRoutes from "../modules/organizer-dashboard/organizerDashboard.routes.js";
 
 router.use("/auth", authRoutes);
 router.use("/back-office",backOfficeRoutes)
@@ -18,5 +17,6 @@ router.use("/", payoutsRoutes);
 router.use("/", invitesRoutes);
 router.use("/", joinRequestsRoutes);
 router.use("/", disputesRoutes);
+router.use("/", organizerDashboardRoutes);
 
 export default router;
