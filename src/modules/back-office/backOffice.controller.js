@@ -77,3 +77,9 @@ export const handleAnalytics = asyncHandler(async (req, res) => {
   const analytics = await getAnalytics();
   res.status(200).json(analytics);
 });
+
+export const handleBackOfficeDashboard = asyncHandler(async (req, res) => {
+  const filters = dashboardQuerySchema.parse(req.query);
+  const dashboard = await getBackOfficeDashboard(req.user.id, req.user.role, filters);
+  res.status(200).json({ success: true, data: dashboard });
+});

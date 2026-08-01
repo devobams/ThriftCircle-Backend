@@ -78,3 +78,41 @@ export function updateDisputeStatusConditional(disputeId, data) {
     data,
   });
 }
+
+export function countDisputesByStatus(groupIds) {
+  const where = groupIds ? { groupId: { in: groupIds } } : {};
+  return prisma.dispute.groupBy({
+    by: ["status"],
+    where,
+    _count: true,
+  });
+}
+
+export function countOverdueContributions(groupIds) {
+  const where = groupIds
+    ? { status: "overdue", groupMember: { groupId: { in: groupIds } } }
+    : { status: "overdue" };
+  return prisma.contribution.count({ where });
+}
+
+export function findGroupsWithOpenDisputes(groupIds, dateFrom, dateTo) {
+  const disputeWhere = { status: "open" };
+  if (dateFrom || dateTo) {
+    disputeWhere.createdAt = {};
+    if (dateFrom) disputeWhere.createdAt.gte = new Date(dateFrom);
+    if (dateTo) disputeWhere.createdAt.lte = new Date(dateTo);
+  }
+  const groupWhere = groupIds ? { id: { in: groupIds } } : {};
+
+  return prisma.group.findMany({
+    where: {
+      ...groupWhere,
+      disputes: { some: disputeWhere },
+    },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { disputes: { where: disputeWhere } } },
+    },
+  });
+}

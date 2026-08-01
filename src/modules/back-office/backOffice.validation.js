@@ -43,3 +43,9 @@ export const resolveDisputeSchema = z.object({
 });
 
 export const analyticsQuerySchema = z.object({});
+
+export const dashboardQuerySchema = z.object({
+  status: z.enum(["open", "in_review", "resolved", "rejected"]).optional(),
+  date_from: z.coerce.date().optional(),
+  date_to: z.coerce.date().optional(),
+});

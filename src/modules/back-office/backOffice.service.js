@@ -12,6 +12,9 @@ import {
   getAssignedDisputes,
   updateDisputeStatusConditional,
   getPlatformAnalytics,
+  countDisputesByStatus,
+  countOverdueContributions,
+  findGroupsWithOpenDisputes,
 } from "./backOffice.model.js";
 import { stripPasswordHash } from "../../utils/sanitizeUser.js";
 
@@ -159,5 +162,47 @@ export async function getAnalytics() {
     total_groups: totalGroups,
     active_groups: activeGroups,
     open_disputes: openDisputes,
+  };
+}
+
+export async function getBackOfficeDashboard(adminId, role, filters) {
+  let groupIds = null;
+  let scope = "platform";
+
+  if (role !== "super_admin") {
+    scope = "assigned";
+    const assignments = await getAssignedGroups(adminId);
+    groupIds = assignments.map((a) => a.groupId);
+  }
+
+  const [totalUsers, totalGroups, activeGroups, disputeCounts, overdueCount, groupsWithDisputes] =
+    await Promise.all([
+      groupIds ? Promise.resolve(null) : prisma.user.count(),
+      groupIds ? groupIds.length : prisma.group.count(),
+      groupIds
+        ? prisma.group.count({ where: { id: { in: groupIds }, status: "active" } })
+        : prisma.group.count({ where: { status: "active" } }),
+      countDisputesByStatus(groupIds),
+      countOverdueContributions(groupIds),
+      findGroupsWithOpenDisputes(groupIds, filters.date_from, filters.date_to),
+    ]);
+
+  const disputeSummary = { open: 0, in_review: 0, resolved: 0, rejected: 0 };
+  disputeCounts.forEach((row) => {
+    disputeSummary[row.status] = row._count;
+  });
+
+  return {
+    scope,
+    total_users: totalUsers,
+    total_groups: totalGroups,
+    active_groups: activeGroups,
+    disputes: disputeSummary,
+    overdue_contributions_count: overdueCount,
+    groups_with_open_disputes: groupsWithDisputes.map((g) => ({
+      group_id: g.id,
+      group_name: g.name,
+      open_dispute_count: g._count.disputes,
+    })),
   };
 }
