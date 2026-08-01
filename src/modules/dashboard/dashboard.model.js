@@ -5,31 +5,7 @@ import prisma from "../../config/prisma.js";
  */
 export function findGroupDashboard(groupId) {
   return prisma.group.findUnique({
-    where: {
-      id: groupId,
-    },
-    include: {
-      contributionCycles: {
-        where: {
-          status: "active",
-        },
-        orderBy: {
-          cycleNumber: "desc",
-        },
-        take: 1,
-        include: {
-          contributions: {
-            include: {
-              groupMember: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    where: { id: groupId },
   });
 }
 
@@ -65,17 +41,7 @@ export function findMemberDashboardData(groupId, userId) {
   return prisma.group.findUnique({
     where: { id: groupId },
     include: {
-      groupMembers: {
-        where: { userId },
-      },
-      contributionCycles: {
-        where: { status: "active" },
-        orderBy: { cycleNumber: "asc" },
-        take: 1,
-        include: {
-          contributions: true,
-        },
-      },
+      groupMembers: { where: { userId } },
     },
   });
 }
