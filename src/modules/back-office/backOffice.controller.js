@@ -6,6 +6,7 @@ import {
   disputeIdParamSchema,
   resolveDisputeSchema,
   analyticsQuerySchema,
+  dashboardQuerySchema,
 } from "./backOffice.validation.js";
 import {
   createAdminAccount,
@@ -15,8 +16,9 @@ import {
   listAssignedGroups,
   resolveAdminDispute,
   getAnalytics,
+  listAssignedDisputes,
+  getBackOfficeDashboard,
 } from "./backOffice.service.js";
-import { listAssignedDisputes } from "./backOffice.service.js";
 
 //POST /back-office/admins
 export const handleCreateAdmin = asyncHandler(async (req, res) => {
