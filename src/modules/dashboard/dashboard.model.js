@@ -60,3 +60,28 @@ export function findNextPayout(groupId) {
     },
   });
 }
+
+export function findMemberDashboardData(groupId, userId) {
+  return prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      groupMembers: {
+        where: { userId },
+      },
+      contributionCycles: {
+        where: { status: "active" },
+        orderBy: { cycleNumber: "asc" },
+        take: 1,
+        include: {
+          contributions: true,
+        },
+      },
+    },
+  });
+}
+
+export function countActiveGroupMembers(groupId) {
+  return prisma.groupMember.count({
+    where: { groupId, joinStatus: "active" },
+  });
+}

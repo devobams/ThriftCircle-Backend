@@ -12,3 +12,9 @@ export const getDashboard = asyncHandler(async (req, res) => {
     data: dashboard,
   });
 });
+
+export const getMemberDashboardHandler = asyncHandler(async (req, res) => {
+  const { id } = groupIdParamsSchema.parse(req.params);
+  const dashboard = await getMemberDashboard(id, req.user.id);
+  res.status(200).json({ success: true, data: dashboard });
+});
