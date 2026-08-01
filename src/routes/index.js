@@ -9,6 +9,7 @@ import joinRequestsRoutes from "../modules/join-requests/join-requests.routes.js
 import disputesRoutes from "../modules/disputes/disputes.routes.js";
 import organizerDashboardRoutes from "../modules/organizer-dashboard/organizerDashboard.routes.js";
 
+const router = Router();
 router.use("/auth", authRoutes);
 router.use("/back-office",backOfficeRoutes)
 router.use("/", groupsRoutes);
