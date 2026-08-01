@@ -5,7 +5,7 @@ import { getDashboard, getMemberDashboardHandler } from "./dashboard.controller.
 
 const router = Router();
 
-router.get("/groups/:id/dashboard", authenticate, authorize("organizer"), getDashboard);
+router.get("/groups/:id/organizer-dashboard", authenticate, authorize("organizer"), getDashboard);
 router.get("/groups/:id/member-dashboard", authenticate, getMemberDashboardHandler);
 
 export default router;

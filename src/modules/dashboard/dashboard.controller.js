@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { groupIdParamsSchema } from "./dashboard.validation.js";
-import { getGroupDashboard } from "./dashboard.service.js";
+import { getGroupDashboard, getMemberDashboard } from "./dashboard.service.js";
 
 export const getDashboard = asyncHandler(async (req, res) => {
   const { id } = groupIdParamsSchema.parse(req.params);
