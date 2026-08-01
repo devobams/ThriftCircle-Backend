@@ -91,7 +91,7 @@ export async function getMemberDashboard(groupId, requestingUserId) {
   }
 
   const memberCount = await countActiveGroupMembers(groupId);
-  const currentCycle = group.contributionCycles[0];
+  const currentCycle = await getCurrentCycle(groupId);
   const allContributions = currentCycle?.contributions ?? [];
 
   const yourContribution = allContributions.find(
@@ -104,22 +104,14 @@ export async function getMemberDashboard(groupId, requestingUserId) {
     : 0;
 
   return {
-    group: {
-      id: group.id,
-      name: group.name,
-      member_count: memberCount,
-    },
+    group: { id: group.id, name: group.name, member_count: memberCount },
     your_contribution: yourContribution
-      ? {
-          amount: Number(yourContribution.amount),
-          due_date: yourContribution.dueDate,
-          status: yourContribution.status,
-        }
+      ? { amount: Number(yourContribution.amount), due_date: yourContribution.dueDate, status: yourContribution.status }
       : null,
     your_position: membership.position,
     cycle_progress: {
       percent_confirmed: percentConfirmed,
-      cycle_due_date: currentCycle?.contributions[0]?.dueDate ?? null,
+      cycle_due_date: allContributions[0]?.dueDate ?? null,
     },
   };
 }
