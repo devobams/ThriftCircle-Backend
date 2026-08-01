@@ -7,8 +7,7 @@ import {
   handleListAdmins,
   handleDeactivateAdmin,
   handleUpdateAssignments,
-} from "./backOffice.controller.js";
-import {
+  handleBackOfficeDashboard,
   handleAssignedGroups,
   handleAssignedDisputes,
   handleResolveDispute,
