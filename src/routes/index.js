@@ -7,17 +7,22 @@ import payoutsRoutes from "../modules/payouts/payouts.routes.js";
 import invitesRoutes from "../modules/invites/invites.routes.js";
 import joinRequestsRoutes from "../modules/join-requests/join-requests.routes.js";
 import disputesRoutes from "../modules/disputes/disputes.routes.js";
+import dashboardRoutes from "../modules/dashboard/dashboard.routes.js";
+import reportsRoutes from "../modules/dashboard/reports.routes.js";
 import organizerDashboardRoutes from "../modules/organizer-dashboard/organizerDashboard.routes.js";
 
 const router = Router();
+
 router.use("/auth", authRoutes);
-router.use("/back-office",backOfficeRoutes)
+router.use("/back-office", backOfficeRoutes)
 router.use("/", groupsRoutes);
 router.use("/", contributionsRoutes);
 router.use("/", payoutsRoutes);
 router.use("/", invitesRoutes);
 router.use("/", joinRequestsRoutes);
 router.use("/", disputesRoutes);
+router.use("/", dashboardRoutes);
+router.use("/", reportsRoutes);
 router.use("/", organizerDashboardRoutes);
 
 export default router;
