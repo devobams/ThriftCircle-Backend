@@ -1,0 +1,28 @@
+import { Router } from "express";
+import authRoutes from "../modules/auth/auth.routes.js";
+import backOfficeRoutes from "../modules/back-office/backOffice.routes.js"
+import groupsRoutes from "../modules/groups/groups.routes.js";
+import contributionsRoutes from "../modules/contributions/contributions.routes.js";
+import payoutsRoutes from "../modules/payouts/payouts.routes.js";
+import invitesRoutes from "../modules/invites/invites.routes.js";
+import joinRequestsRoutes from "../modules/join-requests/join-requests.routes.js";
+import disputesRoutes from "../modules/disputes/disputes.routes.js";
+import dashboardRoutes from "../modules/dashboard/dashboard.routes.js";
+import reportsRoutes from "../modules/dashboard/reports.routes.js";
+import organizerDashboardRoutes from "../modules/organizer-dashboard/organizerDashboard.routes.js";
+
+const router = Router();
+
+router.use("/auth", authRoutes);
+router.use("/back-office", backOfficeRoutes)
+router.use("/", groupsRoutes);
+router.use("/", contributionsRoutes);
+router.use("/", payoutsRoutes);
+router.use("/", invitesRoutes);
+router.use("/", joinRequestsRoutes);
+router.use("/", disputesRoutes);
+router.use("/", dashboardRoutes);
+router.use("/", reportsRoutes);
+router.use("/", organizerDashboardRoutes);
+
+export default router;

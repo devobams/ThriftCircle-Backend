@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: thriftcircle
+      POSTGRES_PASSWORD: thriftcircle_dev
+      POSTGRES_DB: thriftcircle_dev
+    ports:
+      - "5433:5432"   # host:container — changed host side only
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"   # host:container — changed host side only
+    volumes: []
+
+volumes:
+  postgres_data:
