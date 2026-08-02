@@ -1,6 +1,8 @@
 import {
   findGroupDashboard,
   findNextPayout,
+  findMemberDashboardData,
+  countActiveGroupMembers,
 } from "./dashboard.model.js";
 
 import { getCurrentCycle } from "../contributions/contributions.service.js";
@@ -70,5 +72,46 @@ export async function getGroupDashboard(groupId, requestingUserId) {
           cycle_number: nextPayout.cycle.cycleNumber,
         }
       : null,
+  };
+}
+
+export async function getMemberDashboard(groupId, requestingUserId) {
+  const group = await findMemberDashboardData(groupId, requestingUserId);
+  if (!group) {
+    const err = new Error("Group not found.");
+    err.status = 404;
+    throw err;
+  }
+
+  const membership = group.groupMembers[0];
+  if (!membership || membership.joinStatus !== "active") {
+    const err = new Error("You are not a member of this group.");
+    err.status = 403;
+    throw err;
+  }
+
+  const memberCount = await countActiveGroupMembers(groupId);
+  const currentCycle = await getCurrentCycle(groupId);
+  const allContributions = currentCycle?.contributions ?? [];
+
+  const yourContribution = allContributions.find(
+    (c) => c.groupMemberId === membership.id
+  );
+
+  const confirmedCount = allContributions.filter((c) => c.status === "confirmed").length;
+  const percentConfirmed = allContributions.length > 0
+    ? Math.round((confirmedCount / allContributions.length) * 100)
+    : 0;
+
+  return {
+    group: { id: group.id, name: group.name, member_count: memberCount },
+    your_contribution: yourContribution
+      ? { amount: Number(yourContribution.amount), due_date: yourContribution.dueDate, status: yourContribution.status }
+      : null,
+    your_position: membership.position,
+    cycle_progress: {
+      percent_confirmed: percentConfirmed,
+      cycle_due_date: allContributions[0]?.dueDate ?? null,
+    },
   };
 }

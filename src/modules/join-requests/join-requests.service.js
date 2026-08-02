@@ -8,6 +8,7 @@ import {
   findApprovedRequest,
   findTakenPositions,
   createGroupMemberFromRequest,
+  findGroupMembership,
 } from "./join-requests.model.js";
 import { resolveInvite } from "../invites/invites.service.js";
 import { findGroupById } from "../groups/groups.model.js";

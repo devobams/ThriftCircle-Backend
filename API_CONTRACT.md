@@ -241,7 +241,7 @@ corrupt the original plan record.
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/groups/:id/dashboard` | Organizer | Paid/outstanding overview |
+<!-- | `GET` | `/groups/:id/dashboard` | Organizer | Paid/outstanding overview | -->
 | `GET` | `/groups/:id/reports/:cycleId` | Organizer | Cycle report (PDF/CSV) |
 
 Unchanged from v2 — Module D scope, not touched by this round of schema
@@ -376,3 +376,21 @@ precedence rules against `start-rotation`'s own optional override.
 `GET /groups/:id/schedule`, `/groups/:id/payout-order`,
 `/groups/:id/payouts` all now require the caller to be an active member
 of that specific group (403 otherwise) — not just any authenticated user.
+
+## Dashboards — Updated (breaking change)
+
+`GET /groups/:id/dashboard` has been renamed to `GET /groups/:id/organizer-dashboard`.
+Same access rules (organizer of that group only) and response shape — only the
+path changed. Clients still calling the old path will get a 404.
+
+`GET /groups/:id/member-dashboard` — new. Any active member of the group
+(including the organizer). Returns the caller's own current-cycle contribution,
+their rotation position, and current-cycle progress. See NOTES.md for field details.
+
+`GET /organizer/dashboard` — new. Organizer only, no `:id`. Cross-group aggregate
+across every group the caller organizes.
+
+`GET /back-office/dashboard` — new. Admin/Super Admin. Platform-wide for
+super_admin, scoped to assigned groups for admin. Accepts optional
+`date_from`/`date_to` query params filtering `groups_with_open_disputes`
+by dispute creation date.

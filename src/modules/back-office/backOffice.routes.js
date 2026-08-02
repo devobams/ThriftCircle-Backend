@@ -7,8 +7,7 @@ import {
   handleListAdmins,
   handleDeactivateAdmin,
   handleUpdateAssignments,
-} from "./backOffice.controller.js";
-import {
+  handleBackOfficeDashboard,
   handleAssignedGroups,
   handleAssignedDisputes,
   handleResolveDispute,
@@ -63,5 +62,10 @@ router.patch(
   scopeToAssignedGroups,
   handleResolveDispute,
 );
-
+router.get(
+  "/dashboard",
+  authenticate,
+  scopeToAssignedGroups,
+  handleBackOfficeDashboard,
+);
 export default router;
