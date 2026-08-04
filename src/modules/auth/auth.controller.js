@@ -1,6 +1,19 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { registerSchema, loginSchema } from "./auth.validation.js";
-import { registerUser, loginUser, getUserById } from "./auth.service.js";
+import { 
+  registerSchema, 
+  loginSchema,
+  forgotPasswordSchema,
+  verifyResetOtpSchema,
+  resetPasswordSchema
+} from "./auth.validation.js";
+import { 
+  registerUser, 
+  loginUser, 
+  getUserById, 
+  forgotPassword, 
+  verifyResetOtp, 
+  resetPassword 
+} from "./auth.service.js";
 
 export const register = asyncHandler(async (req, res) => {
   const data = registerSchema.parse(req.body);
