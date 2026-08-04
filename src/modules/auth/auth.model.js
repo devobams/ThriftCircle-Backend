@@ -32,23 +32,11 @@ export function savePasswordResetOtp(userId, otp, expiresAt) {
   });
 }
 
-// Find user with matching phone and OTP
-export function findUserByPhoneAndOtp(phoneNumber, otp) {
-  return prisma.user.findFirst({
-    where: {
-      phoneNumber,
-      passwordResetOtp: otp,
-    },
-  });
-}
-
 // Update password
 export function updatePassword(userId, passwordHash) {
   return prisma.user.update({
     where: { id: userId },
-    data: {
-      passwordHash,
-    },
+    data: {passwordHash},
   });
 }
 

@@ -6,7 +6,6 @@ import {
   createUser,
   findUserById,
   savePasswordResetOtp,
-  findUserByPhoneAndOtp,
   updatePassword,
   clearPasswordResetOtp,
 } from "./auth.model.js";
@@ -106,11 +105,9 @@ export async function forgotPassword(data) {
   }
 
   const otp = generateOtp();
-
+  const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-  await savePasswordResetOtp(user.id, otp, expiresAt);
-
+  await savePasswordResetOtp(user.id, hashedOtp, expiresAt);
   await sendOtpSms(user.phoneNumber, otp);
 
   return {
@@ -119,19 +116,26 @@ export async function forgotPassword(data) {
 }
 
 export async function verifyResetOtp(data) {
-  const user = await findUserByPhoneAndOtp(
+  const user = await findUserByPhoneNumber(
     data.phone_number,
     data.otp
   );
 
   if (!user) {
-    const err = new Error("Invalid OTP");
+    const err = new Error("Phone number does not exist");
+    err.status = 404;
+    throw err;
+  }
+
+  if (!user.passwordResetOtpExpiresAt || user.passwordResetOtpExpiresAt < new Date()) {
+    const err = new Error("OTP has expired");
     err.status = 400;
     throw err;
   }
 
-  if (user.passwordResetOtpExpiresAt < new Date()) {
-    const err = new Error("OTP has expired");
+  const isOtpValid = await bcrypt.compare(data.otp, user.passwordResetOtp);
+  if (!isOtpValid) {
+    const err = new Error("Invalid OTP");
     err.status = 400;
     throw err;
   }
@@ -142,19 +146,25 @@ export async function verifyResetOtp(data) {
 }
 
 export async function resetPassword(data) {
-  const user = await findUserByPhoneAndOtp(
-    data.phone_number,
-    data.otp
+  const user = await findUserByPhoneNumber(
+    data.phone_number
   );
 
   if (!user) {
-    const err = new Error("Invalid OTP");
+    const err = new Error("Phone number does not exist");
+    err.status = 404;
+    throw err;
+  }
+
+  if (!user.passwordResetOtpExpiresAt || user.passwordResetOtpExpiresAt < new Date()) {
+    const err = new Error("OTP has expired");
     err.status = 400;
     throw err;
   }
 
-  if (user.passwordResetOtpExpiresAt < new Date()) {
-    const err = new Error("OTP has expired");
+  const isOtpValid = await bcrypt.compare(data.otp, user.passwordResetOtp);
+  if (!isOtpValid) {
+    const err = new Error("Invalid OTP");
     err.status = 400;
     throw err;
   }
@@ -165,9 +175,7 @@ export async function resetPassword(data) {
   );
 
   await updatePassword(user.id, passwordHash);
-
   await clearPasswordResetOtp(user.id);
-
   return {
     message: "Password reset successfully",
   };
