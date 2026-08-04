@@ -10,7 +10,7 @@ import {
   updatePassword,
   clearPasswordResetOtp,
 } from "./auth.model.js";
-import { sendOtpSms } from "../../utils/sms.js";
+import { sendOtpSms } from "../../utils/sendOtpSms.js";
 
 const SALT_ROUNDS = 10;
 
