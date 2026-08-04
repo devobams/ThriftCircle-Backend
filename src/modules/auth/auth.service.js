@@ -5,7 +5,12 @@ import {
   findUserByPhoneNumber,
   createUser,
   findUserById,
+  savePasswordResetOtp,
+  findUserByPhoneAndOtp,
+  updatePassword,
+  clearPasswordResetOtp,
 } from "./auth.model.js";
+import { sendOtpSms } from "../../utils/sms.js";
 
 const SALT_ROUNDS = 10;
 
@@ -37,6 +42,7 @@ function toSafeUser(user) {
   const { passwordHash, ...safeUser } = user;
   return safeUser;
 }
+
 
 
 export async function registerUser(data) {
