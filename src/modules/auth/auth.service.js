@@ -110,9 +110,7 @@ export async function forgotPassword(data) {
   await savePasswordResetOtp(user.id, hashedOtp, expiresAt);
   await sendOtpSms(user.phoneNumber, otp);
 
-  return {
-    message: "Password reset OTP sent successfully",
-  };
+  return {message: "Password reset OTP sent successfully"};
 }
 
 export async function verifyResetOtp(data) {
@@ -140,9 +138,7 @@ export async function verifyResetOtp(data) {
     throw err;
   }
 
-  return {
-    message: "OTP verified successfully",
-  };
+  return {message: "OTP verified successfully"};
 }
 
 export async function resetPassword(data) {
@@ -176,7 +172,5 @@ export async function resetPassword(data) {
 
   await updatePassword(user.id, passwordHash);
   await clearPasswordResetOtp(user.id);
-  return {
-    message: "Password reset successfully",
-  };
+  return {message: "Password reset successfully"};
 }
