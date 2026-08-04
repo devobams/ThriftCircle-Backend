@@ -43,7 +43,10 @@ function toSafeUser(user) {
   return safeUser;
 }
 
-
+// Helper function to generate a 6-digit OTP
+function generateOtp () {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 export async function registerUser(data) {
   const existing = await findUserByPhoneNumber(data.phone_number);
@@ -105,4 +108,81 @@ export async function getUserById(id) {
     throw err;
   }
   return toSafeUser(user);
+}
+
+export async function forgotPassword(data) {
+  const user = await findUserByPhoneNumber(data.phone_number);
+
+  if (!user) {
+    const err = new Error("Phone number does not exist");
+    err.status = 404;
+    throw err;
+  }
+
+  const otp = generateOtp();
+
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await savePasswordResetOtp(user.id, otp, expiresAt);
+
+  await sendOtpSms(user.phoneNumber, otp);
+
+  return {
+    message: "Password reset OTP sent successfully",
+  };
+}
+
+export async function verifyResetOtp(data) {
+  const user = await findUserByPhoneAndOtp(
+    data.phone_number,
+    data.otp
+  );
+
+  if (!user) {
+    const err = new Error("Invalid OTP");
+    err.status = 400;
+    throw err;
+  }
+
+  if (user.passwordResetOtpExpiresAt < new Date()) {
+    const err = new Error("OTP has expired");
+    err.status = 400;
+    throw err;
+  }
+
+  return {
+    message: "OTP verified successfully",
+  };
+}
+
+export async function resetPassword(data) {
+  const user = await findUserByPhoneAndOtp(
+    data.phone_number,
+    data.otp
+  );
+
+  if (!user) {
+    const err = new Error("Invalid OTP");
+    err.status = 400;
+    throw err;
+  }
+
+  if (user.passwordResetOtpExpiresAt < new Date()) {
+    const err = new Error("OTP has expired");
+    err.status = 400;
+    throw err;
+  }
+
+  const passwordHash = await bcrypt.hash(
+    data.new_password,
+    SALT_ROUNDS
+  );
+
+  await updatePassword(user.id, passwordHash);
+
+  await clearPasswordResetOtp(user.id);
+
+  return {
+    message: "Password reset successfully",
+  };
 }
