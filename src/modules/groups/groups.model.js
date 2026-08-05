@@ -49,3 +49,18 @@ export function updateGroupStartDate(groupId, startDate) {
     data: { startDate },
   });
 }
+
+export function findGroupsByOrganizer(organizerId) {
+  return prisma.group.findMany({
+    where: { organizerId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export function findGroupMembersList(groupId) {
+  return prisma.groupMember.findMany({
+    where: { groupId, joinStatus: "active" },
+    orderBy: { position: "asc" },
+    include: { user: true },
+  });
+}
