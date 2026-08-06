@@ -5,7 +5,8 @@ import {
     getMe,
     handleForgotPassword,
     handleVerifyResetOtp,
-    handleResetPassword
+    handleResetPassword,
+    logout
  } from "./auth.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 
@@ -17,4 +18,5 @@ router.get("/me", authenticate, getMe);
 router.post("/forgot-password", handleForgotPassword);
 router.post("/verify-reset-otp", handleVerifyResetOtp);
 router.patch("/reset-password", handleResetPassword);
+router.post("/logout", authenticate, logout);
 export default router;
