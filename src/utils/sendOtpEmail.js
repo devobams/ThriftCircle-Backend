@@ -2,10 +2,12 @@ import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "64.233.184.108", // IPv4 address for smtp.gmail.com
   port: 465,
   secure: true,
-  family: 4, // force IPv4 for this connection
+  tls: {
+    servername: "smtp.gmail.com", // Required so SSL handshake succeeds
+  },
   auth: {
     user: env.gmailUser,
     pass: env.gmailAppPassword,
