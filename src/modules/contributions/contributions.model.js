@@ -195,3 +195,28 @@ export function createRotationSchedule(groupId, cyclesData) {
     return createdCycles;
   });
 }
+
+export function findContributionsByCycle(cycleId) {
+  return prisma.contribution.findMany({
+    where: { cycleId },
+    include: { groupMember: { include: { user: true } } },
+    orderBy: { dueDate: "asc" },
+  });
+}
+
+export function findContributionsByUser(userId) {
+  return prisma.contribution.findMany({
+    where: { groupMember: { userId } },
+    include: {
+      groupMember: { include: { group: true } },
+      cycle: true,
+    },
+    orderBy: { dueDate: "desc" },
+  });
+}
+
+
+export async function getMyContributions(userId) {
+  const contributions = await findContributionsByUser(userId);
+  return stripPasswordHash(contributions);
+}
