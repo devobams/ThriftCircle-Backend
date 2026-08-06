@@ -75,3 +75,10 @@ export function clearPasswordResetToken(userId) {
     data: { passwordResetToken: null, passwordResetTokenExpiresAt: null },
   });
 }
+
+export function deactivateUser(id) {
+  return prisma.user.update({
+    where: { id },
+    data: { status: "deactivated" },
+  });
+}

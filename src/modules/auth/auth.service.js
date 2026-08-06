@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { redis } from "../../config/redis.js";
@@ -17,6 +17,7 @@ import {
   findUserByResetToken,
   savePasswordResetToken,
   clearPasswordResetToken,
+  deactivateUser,
 } from "./auth.model.js";
 import { sendOtpSms } from "../../utils/sendOtpSms.js";
 
@@ -37,7 +38,7 @@ function toSafeUser(user) {
 
 // Helper function to generate a 6-digit OTP
 function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1_000_000).toString();
 }
 
 export async function registerUser(data) {
@@ -107,35 +108,48 @@ export async function getUserById(id) {
 export async function forgotPassword(data) {
   const normalizedPhone = toInternationalFormat(data.phone_number);
   const cooldownKey = `otp-cooldown:${normalizedPhone}`;
+
+  let cooldownAcquired = false;
   try {
-    const isOnCooldown = await redis.get(cooldownKey);
-    if (isOnCooldown) {
+    const acquired = await redis.set(cooldownKey, "1", "EX", 60, "NX");
+    if (!acquired) {
       const err = new Error("Please wait before requesting another OTP");
       err.status = 429;
       throw err;
     }
+    cooldownAcquired = true;
   } catch (err) {
     if (err.status === 429) throw err;
-    // Redis unreachable — degrade gracefully, don't block password reset over it
     console.error("Redis cooldown check failed:", err.message);
   }
 
-  const user = await findUserByPhoneNumber(normalizedPhone);
+  try {
+    const user = await findUserByPhoneNumber(normalizedPhone);
 
-  if (user && user.email) {
-    const otp = generateOtp();
-    const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    await savePasswordResetOtp(user.id, hashedOtp, expiresAt);
+    if (user && user.email) {
+      const otp = generateOtp();
+      const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      await savePasswordResetOtp(user.id, hashedOtp, expiresAt);
 
-    if (env.nodeEnv === "production") {
-      await sendOtpEmail(user.email, otp);
-    } else {
-      console.log(`[DEV MODE] OTP for ${user.email}: ${otp}`);
+      if (env.nodeEnv === "production") {
+        await sendOtpEmail(user.email, otp);
+      } else {
+        console.log(`[DEV MODE] OTP generated for user ${user.id} (${user.email}): ${otp}`);
+      }
     }
-  }
 
-  return { message: "If that phone number is registered with an email, an OTP has been sent." };
+    return { message: "If that phone number is registered with an email, an OTP has been sent." };
+  } catch (err) {
+    if (cooldownAcquired) {
+      try {
+        await redis.del(cooldownKey);
+      } catch (delErr) {
+        console.error("Failed to clear cooldown after send failure:", delErr.message);
+      }
+    }
+    throw err;
+  }
 }
 
 export async function verifyResetOtp(data) {
@@ -194,9 +208,6 @@ export async function resetPassword(data) {
 }
 
 export async function deactivateUserAccount(id) {
-  await prisma.user.update({
-    where: { id },
-    data: { status: "deactivated" },
-  });
+  await deactivateUser(id);
   return { message: "Account deactivated successfully" };
 }
