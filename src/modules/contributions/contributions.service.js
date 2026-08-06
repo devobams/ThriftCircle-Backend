@@ -4,9 +4,12 @@ import {
   applyStatusTransition,
   findGroupForRotationStart,
   createRotationSchedule,
-  findGroupMembershipForUser
+  findGroupMembershipForUser,
+  findContributionsByCycle,
+  findContributionsByUser,
 } from "./contributions.model.js";
 import { updateGroupStartDate } from "../groups/groups.model.js";
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary.js"; // add import
 
 import { stripPasswordHash } from "../../utils/sanitizeUser.js";
 
@@ -23,8 +26,7 @@ export async function getContributionSchedule(groupId, requestingUserId) {
 }
 
 // submitPayment, steps: 1: find contribution, 2: update contribution
-export async function submitPayment(contributionId, userId, proofOfPaymentUrl) {
-  // find contribution first in case it doesn't exist
+export async function submitPayment(contributionId, userId, fileBuffer) {
   const contribution = await findContributionById(contributionId);
   if (!contribution) {
     const err = new Error("Contribution not found");
@@ -32,24 +34,24 @@ export async function submitPayment(contributionId, userId, proofOfPaymentUrl) {
     throw err;
   }
 
-  // check if contribution belongs to user
   if (contribution.groupMember.userId !== userId) {
     const err = new Error("You can only submit payment for your own contribution");
     err.status = 403;
     throw err;
   }
 
-  // check if contribution is pending
   if (contribution.status !== "pending") {
     const err = new Error(`Cannot submit payment — contribution is already "${contribution.status}"`);
     err.status = 409;
     throw err;
   }
 
-  // update contribution
+  // Only upload once every check above has passed
+  const uploadResult = await uploadToCloudinary(fileBuffer);
+
   return applyStatusTransition(
     contributionId,
-    { status: "pending_confirmation", proofOfPaymentUrl },
+    { status: "pending_confirmation", proofOfPaymentUrl: uploadResult.secure_url },
     { oldStatus: "pending", newStatus: "pending_confirmation", actedById: userId }
   );
 }
@@ -204,4 +206,21 @@ export async function startRotation(groupId, organizerId, requestedStartDate) {
   await updateGroupStartDate(groupId, startDate); // persist for dashboard/reports later
 
   return createRotationSchedule(groupId, cyclesData);
+}
+
+export async function getCycleContributions(groupId, cycleId, requestingUserId) {
+  const membership = await findGroupMembershipForUser(groupId, requestingUserId);
+  if (!membership) {
+    const err = new Error("You are not a member of this group");
+    err.status = 403;
+    throw err;
+  }
+  const contributions = await findContributionsByCycle(cycleId);
+  return stripPasswordHash(contributions);
+}
+
+
+export async function getMyContributions(userId) {
+  const contributions = await findContributionsByUser(userId);
+  return stripPasswordHash(contributions);
 }

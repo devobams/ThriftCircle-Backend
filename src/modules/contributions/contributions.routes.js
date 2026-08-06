@@ -8,8 +8,13 @@ import {
   confirmContributionPayment,
   rejectContributionPayment,
   startGroupRotation,
-  getContributionById
+  getContributionById,
+  getContributionsByCycle,
+  getMyContributionHistory
 } from "./contributions.controller.js";
+
+import { uploadSingleFile } from "../../middleware/uploadMiddleware.js"; // add import
+
 
 const router = Router();
 
@@ -19,9 +24,19 @@ const router = Router();
 router.get("/groups/:id/schedule", authenticate, getSchedule);
 
 /**
+ * Returns the contribution history for a user.
+ */
+router.get("/contributions/me", authenticate, getMyContributionHistory);
+
+/**
  * Member submits proof of payment.
  */
-router.post("/contributions/:id/pay", authenticate, submitContributionPayment);
+router.post(
+  "/contributions/:id/pay",
+  authenticate,
+  uploadSingleFile, // NEW — runs before the controller, populates req.file
+  submitContributionPayment
+);
 
 /**
  * Organizer confirms a submitted payment.
@@ -43,5 +58,8 @@ router.post("/groups/:id/start-rotation", authenticate, authorize("organizer"), 
  */
 
 router.get("/contributions/:id", authenticate, getContributionById);
+
+// Get contributions for a specific cycle
+router.get("/groups/:id/cycles/:cycleId/contributions", authenticate, getContributionsByCycle);
 
 export default router;
