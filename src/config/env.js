@@ -17,4 +17,7 @@ export const env = {
   redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
   termiiApiKey: process.env.TERMII_API_KEY,
   termiiBaseUrl: process.env.TERMII_BASE_URL,
+  termiiSenderId: process.env.TERMII_SENDER_ID || "ThriftCircle",
+  gmailUser: process.env.GMAIL_USER,
+  gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
 };
