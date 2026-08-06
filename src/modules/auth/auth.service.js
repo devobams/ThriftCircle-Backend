@@ -1,6 +1,12 @@
+import crypto from "crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { redis } from "../../config/redis.js";
+
 import { env } from "../../config/env.js";
+import { toInternationalFormat } from "../../utils/phoneNumber.js";
+import { sendOtpEmail } from "../../utils/sendOtpEmail.js";
+
 import {
   findUserByPhoneNumber,
   createUser,
@@ -8,17 +14,18 @@ import {
   savePasswordResetOtp,
   updatePassword,
   clearPasswordResetOtp,
+  findUserByResetToken,
+  savePasswordResetToken,
+  clearPasswordResetToken,
 } from "./auth.model.js";
 import { sendOtpSms } from "../../utils/sendOtpSms.js";
 
 const SALT_ROUNDS = 10;
 
 function signToken(user) {
-  return jwt.sign(
-    { id: user.id, role: user.role },
-    env.jwtSecret,
-    {expiresIn: env.jwtExpiresIn}
-  )
+  return jwt.sign({ id: user.id, role: user.role }, env.jwtSecret, {
+    expiresIn: env.jwtExpiresIn,
+  });
 }
 
 // Strip passwordHash before ever sending a user object back to the client
@@ -29,12 +36,13 @@ function toSafeUser(user) {
 }
 
 // Helper function to generate a 6-digit OTP
-function generateOtp () {
+function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export async function registerUser(data) {
-  const existing = await findUserByPhoneNumber(data.phone_number);
+  const normalizedPhone = toInternationalFormat(data.phone_number);
+  const existing = await findUserByPhoneNumber(normalizedPhone);
   if (existing) {
     const err = new Error("Phone number is already registered");
     err.status = 409;
@@ -43,18 +51,19 @@ export async function registerUser(data) {
   const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
   const user = await createUser({
     fullName: data.full_name,
-    phoneNumber: data.phone_number,
+    phoneNumber: normalizedPhone,
     email: data.email,
     passwordHash,
     role: data.intent,
   });
   const token = signToken(user);
-  return { user: toSafeUser(user), token }; // no group_context anymore
+  return { user: toSafeUser(user), token };
 }
 
 export async function loginUser(data) {
   // first find user if exists
-  const user = await findUserByPhoneNumber(data.phone_number);
+  const normalizedPhone = toInternationalFormat(data.phone_number);
+  const user = await findUserByPhoneNumber(normalizedPhone);
   if (!user) {
     const err = new Error("Invalid phone number or password");
     err.status = 401;
@@ -96,32 +105,46 @@ export async function getUserById(id) {
 }
 
 export async function forgotPassword(data) {
-  const user = await findUserByPhoneNumber(data.phone_number);
-
-  if (!user) {
-    const err = new Error("Phone number does not exist");
-    err.status = 404;
-    throw err;
+  const normalizedPhone = toInternationalFormat(data.phone_number);
+  const cooldownKey = `otp-cooldown:${normalizedPhone}`;
+  try {
+    const isOnCooldown = await redis.get(cooldownKey);
+    if (isOnCooldown) {
+      const err = new Error("Please wait before requesting another OTP");
+      err.status = 429;
+      throw err;
+    }
+  } catch (err) {
+    if (err.status === 429) throw err;
+    // Redis unreachable — degrade gracefully, don't block password reset over it
+    console.error("Redis cooldown check failed:", err.message);
   }
 
-  const otp = generateOtp();
-  const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await savePasswordResetOtp(user.id, hashedOtp, expiresAt);
-  await sendOtpSms(user.phoneNumber, otp);
+  const user = await findUserByPhoneNumber(normalizedPhone);
 
-  return {message: "Password reset OTP sent successfully"};
+  if (user && user.email) {
+    const otp = generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await savePasswordResetOtp(user.id, hashedOtp, expiresAt);
+
+    if (env.nodeEnv === "production") {
+      await sendOtpEmail(user.email, otp);
+    } else {
+      console.log(`[DEV MODE] OTP for ${user.email}: ${otp}`);
+    }
+  }
+
+  return { message: "If that phone number is registered with an email, an OTP has been sent." };
 }
 
 export async function verifyResetOtp(data) {
-  const user = await findUserByPhoneNumber(
-    data.phone_number,
-    data.otp
-  );
+  const normalizedPhone = toInternationalFormat(data.phone_number);
+  const user = await findUserByPhoneNumber(normalizedPhone);
 
   if (!user) {
-    const err = new Error("Phone number does not exist");
-    err.status = 404;
+    const err = new Error("Invalid OTP");
+    err.status = 400;
     throw err;
   }
 
@@ -138,39 +161,42 @@ export async function verifyResetOtp(data) {
     throw err;
   }
 
-  return {message: "OTP verified successfully"};
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min to actually reset
+
+  await savePasswordResetToken(user.id, hashedToken, tokenExpiresAt);
+
+  return { message: "OTP verified successfully", reset_token: rawToken };
 }
 
 export async function resetPassword(data) {
-  const user = await findUserByPhoneNumber(
-    data.phone_number
-  );
+  const hashedToken = crypto.createHash("sha256").update(data.reset_token).digest("hex");
+  const user = await findUserByResetToken(hashedToken);
 
   if (!user) {
-    const err = new Error("Phone number does not exist");
-    err.status = 404;
-    throw err;
-  }
-
-  if (!user.passwordResetOtpExpiresAt || user.passwordResetOtpExpiresAt < new Date()) {
-    const err = new Error("OTP has expired");
+    const err = new Error("Invalid or expired reset token");
     err.status = 400;
     throw err;
   }
 
-  const isOtpValid = await bcrypt.compare(data.otp, user.passwordResetOtp);
-  if (!isOtpValid) {
-    const err = new Error("Invalid OTP");
+  if (!user.passwordResetTokenExpiresAt || user.passwordResetTokenExpiresAt < new Date()) {
+    const err = new Error("Reset token has expired");
     err.status = 400;
     throw err;
   }
 
-  const passwordHash = await bcrypt.hash(
-    data.new_password,
-    SALT_ROUNDS
-  );
+  const passwordHash = await bcrypt.hash(data.new_password, SALT_ROUNDS);
 
   await updatePassword(user.id, passwordHash);
-  await clearPasswordResetOtp(user.id);
-  return {message: "Password reset successfully"};
+  await clearPasswordResetToken(user.id);
+  return { message: "Password reset successfully" };
+}
+
+export async function deactivateUserAccount(id) {
+  await prisma.user.update({
+    where: { id },
+    data: { status: "deactivated" },
+  });
+  return { message: "Account deactivated successfully" };
 }

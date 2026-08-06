@@ -50,3 +50,28 @@ export function clearPasswordResetOtp(userId) {
     },
   });
 }
+
+export function savePasswordResetToken(userId, token, expiresAt) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordResetToken: token,
+      passwordResetTokenExpiresAt: expiresAt,
+      passwordResetOtp: null,
+      passwordResetOtpExpiresAt: null, // OTP is now consumed, can't be reused
+    },
+  });
+}
+
+export function findUserByResetToken(hashedToken) {
+  return prisma.user.findFirst({
+    where: { passwordResetToken: hashedToken },
+  });
+}
+
+export function clearPasswordResetToken(userId) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { passwordResetToken: null, passwordResetTokenExpiresAt: null },
+  });
+}
