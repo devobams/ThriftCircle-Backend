@@ -8,13 +8,6 @@ export const contributionIdParamsSchema = z.object({
   id: z.string().uuid("Invalid contribution id"),
 });
 
-export const submitPaymentSchema = z.object({
-  proofOfPaymentUrl: z
-    .string()
-    .trim()
-    .min(1, "Proof of payment is required"),
-});
-
 export const confirmContributionSchema = z.object({
   note: z
     .string()
@@ -45,4 +38,9 @@ export const startRotationSchema = z.object({
     },
     { message: "start_date cannot be in the past" }
   ).optional(),
+});
+
+export const cycleContributionsParamsSchema = z.object({
+  id: z.string().uuid("Invalid group id"),
+  cycleId: z.string().uuid("Invalid cycle id"),
 });
