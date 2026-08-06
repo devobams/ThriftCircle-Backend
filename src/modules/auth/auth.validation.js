@@ -1,63 +1,39 @@
+// auth.validation.js
 import { z } from "zod";
+import { toInternationalFormat } from "../../utils/phoneNumber.js";
 
-const organizerRegisterSchema = z.object({
-  intent: z.literal("organizer"),
+const phoneNumberSchema = z
+  .string()
+  .regex(/^(0|\+?234)[7-9][01]\d{8}$/, "Please enter a valid Nigerian phone number")
+  .transform(toInternationalFormat); // runs AFTER regex validation passes
+
+const emailSchema = z
+  .string()
+  .email("Please enter a valid email address");
+
+export const registerSchema = z.object({
+  intent: z.enum(["organizer", "member"]),
   full_name: z.string().min(2),
-  phone_number: z.string().min(10),
+  phone_number: phoneNumberSchema,
   password: z.string().min(6),
-  email: z.string().email().optional(),
+  email: emailSchema,
 });
-
-const memberRegiserSchema = z.object({
-  intent: z.literal("member"),
-  full_name: z.string().min(2),
-  phone_number: z.string().min(10),
-  password: z.string().min(6),
-  email: z.string().email().optional(),
-  // invite_code: z.string().min(1)
-})
-
-
-export const registerSchema = z.discriminatedUnion("intent", 
-  [organizerRegisterSchema,
-    memberRegiserSchema
-  ]);
-
 
 export const loginSchema = z.object({
-  phone_number: z.string().min(10),
+  phone_number: phoneNumberSchema,
   password: z.string().min(6),
 });
 
-
 export const forgotPasswordSchema = z.object({
-  phone_number: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits"),
+  phone_number: phoneNumberSchema,
 });
-
 
 export const verifyResetOtpSchema = z.object({
-  phone_number: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits"),
-
-  otp: z
-    .string()
-    .length(6, "OTP must be exactly 6 digits"),
+  phone_number: phoneNumberSchema,
+  otp: z.string().regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
 });
 
-
 export const resetPasswordSchema = z.object({
-  phone_number: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits"),
-
-  otp: z
-    .string()
-    .length(6, "OTP must be exactly 6 digits"),
-
-  new_password: z
-    .string()
-    .min(6, "Password must be at least 6 characters"),
+  reset_token: z.string().min(1, "reset_token is required"),
+  new_password: z.string().min(6, "Password must be at least 6 characters"),
 });
