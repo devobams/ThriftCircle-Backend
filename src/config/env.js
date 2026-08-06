@@ -8,16 +8,32 @@ function required(key) {
   return value;
 }
 
+function parseOrigins(value) {
+  return value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 export const env = {
   port: process.env.PORT || 4000,
   nodeEnv: process.env.NODE_ENV || "development",
+
   databaseUrl: required("DATABASE_URL"),
+
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1d",
+
   redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
+
   termiiApiKey: process.env.TERMII_API_KEY,
   termiiBaseUrl: process.env.TERMII_BASE_URL,
   termiiSenderId: process.env.TERMII_SENDER_ID || "ThriftCircle",
+
   gmailUser: process.env.GMAIL_USER,
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
+
+  allowedOrigins: parseOrigins(
+    required("ALLOWED_ORIGINS")
+  ),
 };

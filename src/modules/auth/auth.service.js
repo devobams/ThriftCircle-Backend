@@ -211,3 +211,19 @@ export async function deactivateUserAccount(id) {
   await deactivateUser(id);
   return { message: "Account deactivated successfully" };
 }
+
+function hashToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function logoutUser(token, payload) {
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  const ttlSeconds = payload.exp - nowInSeconds;
+
+  if (ttlSeconds > 0) {
+    await redis.set(`blacklist:${hashToken(token)}`, "1", "EX", ttlSeconds);
+  }
+  // if ttlSeconds <= 0, token was already expired anyway — nothing to blacklist
+
+  return { message: "Logged out successfully" };
+}
