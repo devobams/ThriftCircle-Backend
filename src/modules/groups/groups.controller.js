@@ -1,5 +1,5 @@
 import { createGroupSchema, groupIdParamSchema } from "./groups.validation.js";
-import { createGroup, getGroupById } from "./groups.service.js";
+import { createGroup, getGroupById, listMyGroups, listGroupMembers } from "./groups.service.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
 export const handleCreateGroup = asyncHandler(async (req, res) => {
@@ -25,4 +25,15 @@ export const handleGetGroupById = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(result);
+});
+
+export const handleListMyGroups = asyncHandler(async (req, res) => {
+  const groups = await listMyGroups(req.user.id);
+  res.status(200).json(groups);
+});
+
+export const handleListGroupMembers = asyncHandler(async (req, res) => {
+  const { id } = groupIdParamSchema.parse(req.params);
+  const members = await listGroupMembers(id, req.user.id, req.user.role);
+  res.status(200).json(members);
 });

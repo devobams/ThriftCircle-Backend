@@ -7,6 +7,8 @@ const app = express();
 
 const allowedOrigins = [
   "http://127.0.0.1:5500",
+  "https://thrift-ajo.vercel.app",
+  "http://127.0.0.1:3001",
   // add each teammate's confirmed origin here as they share it
 ];
 
@@ -20,6 +22,12 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
