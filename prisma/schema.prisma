@@ -97,38 +97,42 @@ enum NotificationType {
 // ─────────────────────────────
 
 model User {
-  id           String     @id @default(uuid())
-  fullName     String     @map("full_name")
-  phoneNumber  String     @unique @map("phone_number")
-  email        String?
-  passwordHash String     @map("password_hash")
-  role         Role
-  status       UserStatus @default(active)
-  createdById  String?    @map("created_by")
-  createdAt    DateTime   @default(now()) @map("created_at")
+  id                        String     @id @default(uuid())
+  fullName                  String     @map("full_name")
+  phoneNumber               String     @unique @map("phone_number")
+  email                     String?
+  passwordHash              String     @map("password_hash")
+  role                      Role
+  status                    UserStatus @default(active)
+  passwordResetOtp          String?
+  passwordResetOtpExpiresAt DateTime?
+  passwordResetToken          String?   @unique
+  passwordResetTokenExpiresAt DateTime?
+  createdById               String?    @map("created_by")
+  createdAt                 DateTime   @default(now()) @map("created_at")
 
-  createdBy    User?      @relation("UserCreatedBy", fields: [createdById], references: [id])
-  createdUsers User[]     @relation("UserCreatedBy")
+  createdBy                 User?      @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers              User[]     @relation("UserCreatedBy")
 
-  groupsOrganized Group[] @relation("GroupOrganizer")
-  groupMemberships GroupMember[]
-  invitesCreated Invite[] @relation("InviteCreatedBy")
+  groupsOrganized           Group[] @relation("GroupOrganizer")
+  groupMemberships          GroupMember[]
+  invitesCreated            Invite[] @relation("InviteCreatedBy")
 
-  adminAssignments AdminGroupAssignment[] @relation("AdminAssignments")
-  assignmentsMade  AdminGroupAssignment[] @relation("AssignedBy")
+  adminAssignments          AdminGroupAssignment[] @relation("AdminAssignments")
+  assignmentsMade           AdminGroupAssignment[] @relation("AssignedBy")
 
-  contributionsActedOn Contribution[] @relation("ConfirmedBy")
-  statusLogEntries ContributionStatusLog[] @relation("ActedBy")
+  contributionsActedOn      Contribution[] @relation("ConfirmedBy")
+  statusLogEntries          ContributionStatusLog[] @relation("ActedBy")
 
-  payoutsMarkedPaid Payout[] @relation("PayoutPaidBy")
+  payoutsMarkedPaid         Payout[] @relation("PayoutPaidBy")
 
-  disputesRaised   Dispute[] @relation("RaisedBy")
-  disputesInvolved Dispute[] @relation("InvolvedMember")
+  disputesRaised            Dispute[] @relation("RaisedBy")
+  disputesInvolved          Dispute[] @relation("InvolvedMember")
 
-  joinRequestsMade     JoinRequest[] @relation("JoinRequestUser")
-  joinRequestsReviewed JoinRequest[] @relation("JoinRequestReviewedBy")
+  joinRequestsMade          JoinRequest[] @relation("JoinRequestUser")
+  joinRequestsReviewed      JoinRequest[] @relation("JoinRequestReviewedBy")
 
-  notifications Notification[]
+  notifications             Notification[]
 
   @@map("users")
 }
