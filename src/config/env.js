@@ -36,4 +36,9 @@ export const env = {
   allowedOrigins: parseOrigins(
     required("ALLOWED_ORIGINS")
   ),
+  cloudinary: {
+    cloudName: required("CLOUDINARY_CLOUD_NAME"),
+    apiKey: required("CLOUDINARY_API_KEY"),
+    apiSecret: required("CLOUDINARY_API_SECRET"),
+  },
 };
