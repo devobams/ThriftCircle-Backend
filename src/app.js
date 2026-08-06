@@ -1,21 +1,20 @@
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { env } from "./config/env.js";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://127.0.0.1:5500",
-  "https://thrift-ajo.vercel.app",
-  "http://127.0.0.1:3001",
-  // add each teammate's confirmed origin here as they share it
-];
-
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // Postman, curl, server-to-server
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (!origin) return callback(null, true);
+
+    if (env.allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
@@ -30,6 +29,8 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(morgan(":method :url :status :response-time ms"));
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

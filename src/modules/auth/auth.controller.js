@@ -12,7 +12,8 @@ import {
   getUserById, 
   forgotPassword, 
   verifyResetOtp, 
-  resetPassword 
+  resetPassword,
+  logoutUser
 } from "./auth.service.js";
 
 export const register = asyncHandler(async (req, res) => {
@@ -47,5 +48,10 @@ export const handleVerifyResetOtp = asyncHandler(async (req, res) => {
 export const handleResetPassword = asyncHandler(async (req, res) => {
   const data = resetPasswordSchema.parse(req.body);
   const result = await resetPassword(data);
+  res.status(200).json(result);
+});
+
+export const logout = asyncHandler(async (req, res) => {
+  const result = await logoutUser(req.token, req.user);
   res.status(200).json(result);
 });
