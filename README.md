@@ -182,7 +182,7 @@ independently.
 
 1. Clone the repository and install dependencies:
    ```
-   git clone <repo-url>
+   git clone [ThriftCircle-Backend](https://github.com/devobams/ThriftCircle-Backend)
    cd ThriftCircle-Backend
    npm install
    ```
